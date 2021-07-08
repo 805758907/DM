@@ -386,3 +386,25 @@ void Mesh::generateDM(){
     }
 }
 
+bool Mesh::isNLD(Edge& edge){
+    if (edge.faceId.size() != 2) {
+
+    }
+    else {
+        Face face1 = faces[*(edge.faceId.begin())];
+        Face face2 = faces[*(++edge.faceId.begin())];
+
+
+    }
+}
+
+void Mesh::findAllNLDEdges(){
+    for (auto it = edges.begin(); it != edges.end(); it++) {
+        if (isNLD(*it)) {
+            NLDEdges.push(*it);
+        }
+    }
+}
+
+
+

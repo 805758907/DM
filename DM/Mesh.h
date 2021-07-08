@@ -3,6 +3,7 @@
 
 #include "Face.h"
 #include <unordered_map>
+#include <stack>
 
 template<typename T>
 inline void hash_combine(std::size_t& seed, const T& val)
@@ -50,6 +51,7 @@ public:
     std::vector<Face> faces;
     std::list<Edge> edges;
     std::vector<Vertex> vertexes;
+    std::stack<Edge> NLDEdges;
 
     std::unordered_map<glm::vec3, int, hash_point>	m_hash_point;
 
@@ -65,6 +67,8 @@ public:
     void generateEdge(Face& face);
     void computeParameter();
     void generateDM();
+    bool isNLD(Edge& edge);
+    void findAllNLDEdges();
     int findVertexByPoint(glm::vec3 p);
 };
 

@@ -13,6 +13,7 @@ class Edge
 	std::list<glm::vec3> Ce;
 
 public:
+	bool flippable = false;
 	double length;
 	std::set<int> faceId;
 	Vertex vertexe1;
