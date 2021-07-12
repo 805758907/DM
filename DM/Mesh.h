@@ -31,7 +31,7 @@ inline std::size_t hash_val(const Types& ...args)
 	hash_val(seed, args...);
 	return seed;
 }
-class hash_point {
+class hash_point {          //unordered_map（hashMap）的hash函数，上面都是哈希函数的一部分
 public:
 	size_t operator()(const glm::vec3& p) const {
 		return hash_val(p.x, p.y, p.z);
@@ -65,9 +65,9 @@ public:
     bool saveSTLASCII(char *pathname,char * filename);
 
     void generateEdge(Face& face);
-    void computeParameter();
-    void generateDM();
-    bool isNLD(Edge& edge);
+    void computeParameter();        //计算最长边、最短边和最小夹角
+    void generateDM();              //对每条边生成Ce
+    bool isNLD(Edge& edge);         //判断是否是NLD边
     void findAllNLDEdges();
     int findVertexByPoint(glm::vec3 p);
 };

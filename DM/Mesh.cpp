@@ -4,7 +4,7 @@
 #include "Mesh.h"
 
 
-bool compare(const Edge& a, const  Edge& b){
+bool compare(const Edge& a, const  Edge& b){        //边的比较函数，先比较第一个点（下标最小的点），如果相同再比较第二个点
     if (a.vertexe1.vertexId != b.vertexe1.vertexId) {
         return a.vertexe1.vertexId < b.vertexe1.vertexId;
     }
@@ -271,8 +271,10 @@ void Mesh::generateEdge(Face& face){
         }
         edge1.length = length01;
         edge1.faceId.insert(face.faceId);
+        edge1.parent = &edge1;
         edges.insert(it, edge1);
     }
+    face.edges.push_back(edge1);
     
 
     if (face.vertexs[1].vertexId < face.vertexs[2].vertexId) {
@@ -305,10 +307,11 @@ void Mesh::generateEdge(Face& face){
         }
         edge2.length = length12;
         edge2.faceId.insert(face.faceId);
+        edge2.parent = &edge2;
         edges.insert(it, edge2);
 
     }
-    
+    face.edges.push_back(edge2);
     
 
     if (face.vertexs[0].vertexId < face.vertexs[2].vertexId) {
@@ -341,10 +344,11 @@ void Mesh::generateEdge(Face& face){
         }
         edge3.length = length02;
         edge3.faceId.insert(face.faceId);
+        edge3.parent = &edge3;
         edges.insert(it, edge3);
 
     }
-    
+    face.edges.push_back(edge2);
     
     
     //求角度
@@ -353,16 +357,19 @@ void Mesh::generateEdge(Face& face){
     if (sinTheta0 < sinThetaMin) {
         sinThetaMin = sinTheta0;
     }
+    face.angles.push_back(sinTheta0);
     double cosTheta1 = glm::dot((face.vertexs[0].position - face.vertexs[1].position), (face.vertexs[2].position - face.vertexs[1].position)) / length01 / length12;
     double sinTheta1 = sqrt(1 - cosTheta1 * cosTheta1);
     if (sinTheta1 < sinThetaMin) {
         sinThetaMin = sinTheta1;
     }
+    face.angles.push_back(sinTheta1);
     double cosTheta2 = glm::dot((face.vertexs[0].position - face.vertexs[2].position), (face.vertexs[1].position - face.vertexs[2].position)) / length12 / length02;
     double sinTheta2 = sqrt(1 - cosTheta2 * cosTheta2);
     if (sinTheta2 < sinThetaMin) {
         sinThetaMin = sinTheta2;
     }
+    face.angles.push_back(sinTheta2);
     if (sinThetaMin < 0.001) {
         //printf("11");
     }
@@ -381,12 +388,12 @@ void Mesh::computeParameter(){
 }
 
 void Mesh::generateDM(){
-    for (auto it = edges.begin(); it != edges.end(); it++) {
+/*   for (auto it = edges.begin(); it != edges.end(); it++) {
         (*it).constructCe(rhoV, rhoE);
-    }
+    }*/ 
 }
 
-bool Mesh::isNLD(Edge& edge){
+bool Mesh::isNLD(Edge& edge){   
     if (edge.faceId.size() != 2) {
 
     }
@@ -394,6 +401,39 @@ bool Mesh::isNLD(Edge& edge){
         Face face1 = faces[*(edge.faceId.begin())];
         Face face2 = faces[*(++edge.faceId.begin())];
 
+        Vertex top1;
+        Vertex top2;
+        double sin1 = 0.0;
+        double sin2 = 0.0;
+        for (int i = 0; i < 3; i++) {
+            if (face1.vertexs[i].vertexId != edge.vertexe1.vertexId && face1.vertexs[i].vertexId != edge.vertexe2.vertexId) {
+                top1 = face1.vertexs[i];
+                sin1 = face1.angles[i];
+                break;
+            }
+        }
+        for (int i = 0; i < 3; i++) {
+            if (face2.vertexs[i].vertexId != edge.vertexe1.vertexId && face2.vertexs[i].vertexId != edge.vertexe2.vertexId) {
+                top2 = face2.vertexs[i];
+                sin2 = face2.angles[i];
+                break;
+            }
+        }
+        //求角度之和，用sin(1+2) = sin(1)*cos(1) + cos(1)*sin(1)
+        double cos1 = sqrt(1 - sin1 * sin1);        
+        double cos2 = sqrt(1 - sin2 * sin2);
+
+        if ((sin1 * cos1 + cos1 * sin1) < 0) {
+            glm::vec3 normal1 = glm::normalize(face1.normal);
+            glm::vec3 normal2 = glm::normalize(face2.normal);
+
+            if ((normal1 == normal2) || (normal1 + normal2 == glm::vec3(0, 0, 0))) {
+                edge.flippable = true;
+                
+            }
+            return true;
+        }
+        return false;
 
     }
 }

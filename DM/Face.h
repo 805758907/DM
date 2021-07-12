@@ -8,6 +8,7 @@ public:
     std::vector<Vertex> vertexs;
     std::vector<Edge> edges;
     glm::vec3 normal;
+    std::vector<double> angles;
     char buf[2];
     int faceId;
 public:

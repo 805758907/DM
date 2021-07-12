@@ -1,6 +1,7 @@
 #include "Edge.h"
 
 Edge::Edge(){
+	parent = nullptr;
 }
 
 Edge::~Edge(){

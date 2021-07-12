@@ -14,6 +14,7 @@ class Edge
 
 public:
 	bool flippable = false;
+	Edge* parent;
 	double length;
 	std::set<int> faceId;
 	Vertex vertexe1;
