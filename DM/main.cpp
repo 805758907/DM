@@ -4,8 +4,8 @@
 
 int main() {
     Mesh mesh;
-    mesh.readSTL("../file/dianchazuo.stl");
-    mesh.generateDM();
+    mesh.readSTL("../file/≤£¡ß’÷.STL");
+    //mesh.generateDM();
     mesh.saveSTLBinary("./test.stl");
     return 0;
 }

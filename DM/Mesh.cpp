@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <cstring>
 #include <algorithm>
+#include <fstream>
 #include "Mesh.h"
 
 
@@ -46,14 +47,66 @@ bool Mesh::readSTL(const char *fileName) {
 }
 
 bool Mesh::readSTLASCII(const char *fileName) {
-    FILE* fStl = nullptr;
-    int err = fopen_s(&fStl, fileName, "r");
-    if (fStl == nullptr) {
-        return false;
+    std::ifstream fileSTL(fileName, std::ios::in | std::ios::binary);
+    char buf[255];
+    char end[] = "endsolid";
+    fileSTL >> buf;         //solid
+    fileSTL >> partName;    //filenamestl 
+    float v1, v2, v3;
+    int faceId = 0;
+    int vertexId = 0;
+    while (fileSTL >> buf) {
+        if (strcmp(buf, end) == 0) { //facet
+            break;
+        }
+        Face face;
+        fileSTL >> buf;     // normal 
+
+        fileSTL >> v1;
+        fileSTL >> v2;
+        fileSTL >> v3;
+        face.setNormal(v1, v2, v3);
+        std::vector<Vertex> vs;
+
+        fileSTL >> buf;     //outer 
+        fileSTL >> buf;     //loop
+
+        for (unsigned j = 0; j < 3; j++) {
+            fileSTL >> buf; //vertex 
+
+            fileSTL >> v1;
+            fileSTL >> v2;
+            fileSTL >> v3;
+            glm::vec3 p = glm::vec3(v1, v2, v3);
+
+            int id = findVertexByPoint(p);
+            if (id == -1) {			//没找到，该point是新的
+                Vertex vertex;
+                vertex.init(p);
+                vertex.setId(vertexId);
+                m_hash_point[p] = vertexId;
+                vertexId++;
+                vertexes.push_back(vertex);
+                vs.push_back(vertex);
+            }
+            else {
+                vs.push_back(vertexes[id]);
+            }
+        }
+        fileSTL >> buf;     //endloop
+        fileSTL >> buf;     //endfacet
+
+        face.setId(faceId);
+        face.setVertex(vs);
+        generateEdge(face);
+
+
+        faces.push_back(face);
+        faceId++;
+        faceNum++;
     }
-    if (err != 0) {
-        return false;
-    }
+    
+    computeParameter();
     return true;
 }
 
