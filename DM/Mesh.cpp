@@ -50,60 +50,65 @@ bool Mesh::readSTLASCII(const char *fileName) {
     std::ifstream fileSTL(fileName, std::ios::in | std::ios::binary);
     char buf[255];
     char end[] = "endsolid";
+    char begin[] = "facet";
     fileSTL >> buf;         //solid
     fileSTL >> partName;    //filenamestl 
     float v1, v2, v3;
     int faceId = 0;
     int vertexId = 0;
+
     while (fileSTL >> buf) {
-        if (strcmp(buf, end) == 0) { //facet
+        if (strcmp(buf, end) == 0) { //endsolid结束
             break;
         }
-        Face face;
-        fileSTL >> buf;     // normal 
-
-        fileSTL >> v1;
-        fileSTL >> v2;
-        fileSTL >> v3;
-        face.setNormal(v1, v2, v3);
-        std::vector<Vertex> vs;
-
-        fileSTL >> buf;     //outer 
-        fileSTL >> buf;     //loop
-
-        for (unsigned j = 0; j < 3; j++) {
-            fileSTL >> buf; //vertex 
+        else if (strcmp(buf, begin) == 0) { //facet
+            Face face;
+            fileSTL >> buf;     // normal 
 
             fileSTL >> v1;
             fileSTL >> v2;
             fileSTL >> v3;
-            glm::vec3 p = glm::vec3(v1, v2, v3);
+            face.setNormal(v1, v2, v3);
+            std::vector<Vertex> vs;
 
-            int id = findVertexByPoint(p);
-            if (id == -1) {			//没找到，该point是新的
-                Vertex vertex;
-                vertex.init(p);
-                vertex.setId(vertexId);
-                m_hash_point[p] = vertexId;
-                vertexId++;
-                vertexes.push_back(vertex);
-                vs.push_back(vertex);
+            fileSTL >> buf;     //outer 
+            fileSTL >> buf;     //loop
+
+            for (unsigned j = 0; j < 3; j++) {
+                fileSTL >> buf; //vertex 
+
+                fileSTL >> v1;
+                fileSTL >> v2;
+                fileSTL >> v3;
+                glm::vec3 p = glm::vec3(v1, v2, v3);
+
+                int id = findVertexByPoint(p);
+                if (id == -1) {			//没找到，该point是新的
+                    Vertex vertex;
+                    vertex.init(p);
+                    vertex.setId(vertexId);
+                    m_hash_point[p] = vertexId;
+                    vertexId++;
+                    vertexes.push_back(vertex);
+                    vs.push_back(vertex);
+                }
+                else {
+                    vs.push_back(vertexes[id]);
+                }
             }
-            else {
-                vs.push_back(vertexes[id]);
-            }
+            fileSTL >> buf;     //endloop
+            fileSTL >> buf;     //endfacet
+
+            face.setId(faceId);
+            face.setVertex(vs);
+            generateEdge(face);
+
+
+            faces.push_back(face);
+            faceId++;
+            faceNum++;
         }
-        fileSTL >> buf;     //endloop
-        fileSTL >> buf;     //endfacet
-
-        face.setId(faceId);
-        face.setVertex(vs);
-        generateEdge(face);
-
-
-        faces.push_back(face);
-        faceId++;
-        faceNum++;
+        
     }
     
     computeParameter();
@@ -170,34 +175,41 @@ bool Mesh::readSTLBinary(const char* fileName) {
     return true;
 
 }
-/*
-bool Mesh::saveSTLASCII(char *pathName, char *fileName) {
-    bool suc = true;
-    char *saveName = new char[100];
-    sprintf(savename, "%s%s.stl", pathname, filename);
+
+bool Mesh::saveSTLASCII(const char *fileName) {
 
     char *fileInf = new char[200];
-    sprintf(fileInf, "solid %s.stl  %s", filename, "by master");
+    int len = 0;
+    while (fileName[len] != '\0') {
+        len++;
+    }
+    snprintf(fileInf,len+7, "solid %s", fileName);
+    FILE* fp = nullptr;
+    int err = fopen_s(&fp, fileName, "w");
 
-    FILE *fp = fopen(savename, "w");
+    if (err != 0|| fp == nullptr) {
+        return false;
+    }
+
     fprintf(fp, "%s\n", fileInf);
-    delete[]savename;
 
-    for (int i = 0; i < m_TriaNum; i++) {
-        int id = triaV1[i];
-        float v1x = vx[id];
-        float v1y = vy[id];
-        float v1z = vz[id];
 
-        id = triaV2[i];
-        float v2x = vx[id];
-        float v2y = vy[id];
-        float v2z = vz[id];
+    for (int i = 0; i < faceNum; i++) {
+        glm::vec3 v1 = (faces[i].vertexs.begin())->position;
+        float v1x = v1.x;
+        float v1y = v1.y;
+        float v1z = v1.z;
 
-        id = triaV3[i];
-        float v3x = vx[id];
-        float v3y = vy[id];
-        float v3z = vz[id];
+        glm::vec3 v2 = (++faces[i].vertexs.begin())->position;
+        float v2x = v2.x;
+        float v2y = v2.y;
+        float v2z = v2.z;
+
+        glm::vec3 v3 = (++(++faces[i].vertexs.begin()))->position;
+        float v3x = v3.x;
+        float v3y = v3.y;
+        float v3z = v3.z;
+
 
         float nx = (v1y - v3y) * (v2z - v3z) - (v1z - v3z) * (v2y - v3y);
         float ny = (v1z - v3z) * (v2x - v3x) - (v2z - v3z) * (v1x - v3x);
@@ -205,26 +217,24 @@ bool Mesh::saveSTLASCII(char *pathName, char *fileName) {
 
         float nxyz = sqrt(nx * nx + ny * ny + nz * nz);
 
-        fprintf(fp, "Face normal %f %f %f\n", nx / nxyz, ny / nxyz, nz / nxyz);
+        fprintf(fp, "facet normal %f %f %f\n", nx / nxyz, ny / nxyz, nz / nxyz);
         fprintf(fp, "outer loop\n");
         fprintf(fp, "vertex %f %f %f\n", v1x, v1y, v1z);
         fprintf(fp, "vertex %f %f %f\n", v2x, v2y, v2z);
         fprintf(fp, "vertex %f %f %f\n", v3x, v3y, v3z);
         fprintf(fp, "endloop\n");
-        fprintf(fp, "endFace\n");
+        fprintf(fp, "endfacet\n");
 
     }
-    sprintf(fileInf, "endsolid %s.ast  %s", filename, "by master");
+    snprintf(fileInf, len + 10, "endsolid %s", fileName);
     fprintf(fp, "%s\n", fileInf);
     fclose(fp);
 
     delete[]fileInf;
-
-
-    return suc;
+    return true;
 }
-*/
-bool Mesh::saveSTLBinary(const char *fileName) {
+
+bool Mesh::saveSTLBinary(const char * fileName) {
 
     //char *saveName = new char[100];
     //sprintf(saveName, "%s%s.stl", pathName, fileName);
@@ -271,9 +281,6 @@ bool Mesh::saveSTLBinary(const char *fileName) {
 
 }
 
-bool Mesh::saveSTLASCII(char* pathname, char* filename){
-    return false;
-}
 
 int Mesh::findVertexByPoint(glm::vec3 p) {
     auto it = m_hash_point.find(p);
@@ -448,7 +455,7 @@ void Mesh::generateDM(){
 
 bool Mesh::isNLD(Edge& edge){   
     if (edge.faceId.size() != 2) {
-
+        return false;
     }
     else {
         Face face1 = faces[*(edge.faceId.begin())];

@@ -61,8 +61,8 @@ public:
     bool readSTL(const char* fileName);
     bool readSTLASCII(const char *fileName);
     bool readSTLBinary(const char* fileName);
-    bool saveSTLBinary(const char *pathname);
-    bool saveSTLASCII(char *pathname,char * filename);
+    bool saveSTLBinary(const char * fileName);
+    bool saveSTLASCII(const char * fileName);
 
     void generateEdge(Face& face);
     void computeParameter();        //计算最长边、最短边和最小夹角
