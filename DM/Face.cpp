@@ -3,9 +3,8 @@ Face::Face() {
 }
 
 void Face::setNormal(float i, float j, float k) {
-    normal[0] = i;
-    normal[1] = j;
-    normal[2] = k;
+    glm::vec3 nv(i, j, k);
+    normal = glm::normalize(nv);
 }
 
 void Face::setVertex(std::vector<Vertex>& vs){

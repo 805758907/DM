@@ -67,8 +67,11 @@ public:
     void generateEdge(Face& face);
     void computeParameter();        //计算最长边、最短边和最小夹角
     void generateDM();              //对每条边生成Ce
+    void handleNonFlippableNLDEdge(Edge& edge);
     bool isNLD(Edge& edge);         //判断是否是NLD边
     void findAllNLDEdges();
+    glm::vec3 calNormal(glm::vec3&, glm::vec3&, glm::vec3&);
+    glm::vec3 getAnotherVertexPositionByEdge(Face& face, Edge& edge);
     int findVertexByPoint(glm::vec3 p);
 };
 

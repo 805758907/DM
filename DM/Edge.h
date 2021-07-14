@@ -19,6 +19,7 @@ public:
 	std::set<int> faceId;
 	Vertex vertexe1;
 	Vertex vertexe2;
+	int edgeId;
 	Edge();
 	~Edge();
 	void constructCe(double rhoV, double rhoE);
