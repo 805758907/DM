@@ -15,6 +15,60 @@ bool compare(const Edge& a, const  Edge& b){
     return a.vertexe2.vertexId < b.vertexe2.vertexId;
 }
 
+//求外接圆圆心
+glm::vec3 solveCenterPointOfCircle(glm::vec3& pt0, glm::vec3& pt1, glm::vec3& pt2)
+{
+    double a1, b1, c1, d1;
+    double a2, b2, c2, d2;
+    double a3, b3, c3, d3;
+
+    double x1 = pt0.x, y1 = pt0.y, z1 = pt0.z;
+    double x2 = pt1.x, y2 = pt1.y, z2 = pt1.z;
+    double x3 = pt2.x, y3 = pt2.y, z3 = pt2.z;
+
+    a1 = (y1 * z2 - y2 * z1 - y1 * z3 + y3 * z1 + y2 * z3 - y3 * z2);
+    b1 = -(x1 * z2 - x2 * z1 - x1 * z3 + x3 * z1 + x2 * z3 - x3 * z2);
+    c1 = (x1 * y2 - x2 * y1 - x1 * y3 + x3 * y1 + x2 * y3 - x3 * y2);
+    d1 = -(x1 * y2 * z3 - x1 * y3 * z2 - x2 * y1 * z3 + x2 * y3 * z1 + x3 * y1 * z2 - x3 * y2 * z1);
+
+    a2 = 2 * (x2 - x1);
+    b2 = 2 * (y2 - y1);
+    c2 = 2 * (z2 - z1);
+    d2 = x1 * x1 + y1 * y1 + z1 * z1 - x2 * x2 - y2 * y2 - z2 * z2;
+
+    a3 = 2 * (x3 - x1);
+    b3 = 2 * (y3 - y1);
+    c3 = 2 * (z3 - z1);
+    d3 = x1 * x1 + y1 * y1 + z1 * z1 - x3 * x3 - y3 * y3 - z3 * z3;
+    glm::vec3 res;
+
+
+    res.x = -(b1 * c2 * d3 - b1 * c3 * d2 - b2 * c1 * d3 + b2 * c3 * d1 + b3 * c1 * d2 - b3 * c2 * d1)
+        / (a1 * b2 * c3 - a1 * b3 * c2 - a2 * b1 * c3 + a2 * b3 * c1 + a3 * b1 * c2 - a3 * b2 * c1);
+    res.y = (a1 * c2 * d3 - a1 * c3 * d2 - a2 * c1 * d3 + a2 * c3 * d1 + a3 * c1 * d2 - a3 * c2 * d1)
+        / (a1 * b2 * c3 - a1 * b3 * c2 - a2 * b1 * c3 + a2 * b3 * c1 + a3 * b1 * c2 - a3 * b2 * c1);
+    res.z = -(a1 * b2 * d3 - a1 * b3 * d2 - a2 * b1 * d3 + a2 * b3 * d1 + a3 * b1 * d2 - a3 * b2 * d1)
+        / (a1 * b2 * c3 - a1 * b3 * c2 - a2 * b1 * c3 + a2 * b3 * c1 + a3 * b1 * c2 - a3 * b2 * c1);
+
+    return res;
+}
+
+//求外接圆和直线的另一个交点(在v1v3这条直线上的位置）,如果只有一个交点，则返回0
+float getAnotherPoint(glm::vec3& v3, glm::vec3& v1, glm::vec3& center) {
+    float x31 = v3.x - v1.x;
+    float x21 = center.x - v1.x;
+    float y31 = v3.y - v1.y;
+    float y21 = center.y - v1.y;
+    float z31 = v3.z - v1.z;
+    float z21 = center.z - v1.z;
+
+
+    float t = 2 * (x31 * x21 + y31 * y21 + z31 * z21) / (x31 * x31 + y31 * y31 + z31 * z31);
+
+    //return glm::vec3(v1.x + t * x31, v1.y + t * y31, v1.z + t * z31);
+    return t;
+}
+
 Mesh::Mesh() {
 }
 
@@ -575,6 +629,7 @@ void Mesh::handleNonFlippableNLDEdge(Edge& edge){
     moveBack = glm::mat4(1.0f);
     moveBack = glm::translate(moveBack, vertexA.position);
     newVertexEPosition = moveBack * trans * moveTo * newVertexEPosition;
+    newVertexEPos = glm::vec3(newVertexEPosition);
 
     glm::vec3 newVertexFPos = glm::vec3(newVertexFPosition);
     glm::vec3 normalBCF = calNormal(vertexB.position, newVertexCPos, newVertexEPos);
@@ -588,7 +643,7 @@ void Mesh::handleNonFlippableNLDEdge(Edge& edge){
     moveBack = glm::mat4(1.0f);
     moveBack = glm::translate(moveBack, vertexB.position);
     newVertexFPosition = moveBack * trans * moveTo * newVertexFPosition;
-
+    newVertexFPos = glm::vec3(newVertexFPosition);
 
     //再旋转与ABD相邻的两个三角面到达在同一平面
     
@@ -619,9 +674,10 @@ void Mesh::handleNonFlippableNLDEdge(Edge& edge){
     moveBack = glm::mat4(1.0f);
     moveBack = glm::translate(moveBack, vertexA.position);
     vertexHPosition = moveBack * trans * moveTo * vertexHPosition;
+    vertexHPos = glm::vec3(vertexHPosition);
 
-    glm::vec3 newVertexGPos = glm::vec3(vertexGPosition);
-    glm::vec3 normalBDG = calNormal(vertexB.position, newVertexGPos, vertexD.position);
+    glm::vec3 vertexGPos = glm::vec3(vertexGPosition);
+    glm::vec3 normalBDG = calNormal(vertexB.position, vertexGPos, vertexD.position);
     float cosAngleG = glm::dot(normalABD, normalBDG);   //都是单位向量
     float angleG = acos(cosAngleG);                   //旋转的弧度
     glm::vec3 newBD = glm::normalize(vertexD.position - vertexB.position); //该边的向量
@@ -632,6 +688,26 @@ void Mesh::handleNonFlippableNLDEdge(Edge& edge){
     moveBack = glm::mat4(1.0f);
     moveBack = glm::translate(moveBack, vertexB.position);
     vertexGPosition = moveBack * trans * moveTo * vertexGPosition;
+    vertexGPos = glm::vec3(vertexGPosition);
+
+    glm::vec3 center = solveCenterPointOfCircle(vertexA.position, vertexD.position, newVertexCPos);
+    double tEnd = getAnotherPoint(vertexB.position, vertexA.position, center);
+//    glm::vec3 ACD = glm::vec3(vertexA.position.x + t * (vertexB.position.x - vertexA.position.x), vertexA.position.y + t * (vertexB.position.y - vertexA.position.y), vertexA.position.z + t * (vertexB.position.z - vertexA.position.z));
+    center = solveCenterPointOfCircle(vertexB.position, vertexD.position, newVertexCPos);
+    double tStart = getAnotherPoint(vertexB.position, vertexA.position, center);
+
+    center = solveCenterPointOfCircle(vertexA.position, newVertexEPos, newVertexCPos);
+    double tE = getAnotherPoint(vertexB.position, vertexA.position, center);
+
+    center = solveCenterPointOfCircle(vertexA.position, vertexD.position, vertexHPos);
+    double tH = getAnotherPoint(vertexB.position, vertexA.position, center);
+
+    center = solveCenterPointOfCircle(vertexB.position, newVertexCPos, newVertexFPos);
+    double tF = getAnotherPoint(vertexB.position, vertexA.position, center);
+
+    center = solveCenterPointOfCircle(vertexB.position, vertexD.position, vertexGPos);
+    double tG = getAnotherPoint(vertexB.position, vertexA.position, center);
+
 
 }
 
