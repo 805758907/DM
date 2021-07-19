@@ -48,10 +48,10 @@ public:
     double sinThetaMin = 1;
     double rhoV;
     double rhoE;
-    std::vector<Face> faces;
-    std::list<Edge> edges;
-    std::vector<Vertex> vertexes;
-    std::stack<Edge> NLDEdges;
+    std::vector<Face*> faces;
+    std::list<Edge*> edges;
+    std::vector<Vertex*> vertexes;
+    std::stack<Edge*> NLDEdges;
 
     std::unordered_map<glm::vec3, int, hash_point>	m_hash_point;
 
@@ -64,14 +64,15 @@ public:
     bool saveSTLBinary(const char * fileName);
     bool saveSTLASCII(const char * fileName);
 
-    void generateEdge(Face& face);
+    void generateEdge(Face* face, bool calAngle);
     void computeParameter();        //计算最长边、最短边和最小夹角
     void generateDM();              //对每条边生成Ce
-    void handleNonFlippableNLDEdge(Edge& edge);
-    bool isNLD(Edge& edge);         //判断是否是NLD边
+    void handleNonFlippableNLDEdge(Edge* edge);
+    bool isNLD(Edge* edge);         //判断是否是NLD边
     void findAllNLDEdges();
-    glm::vec3 calNormal(glm::vec3&, glm::vec3&, glm::vec3&);
-    glm::vec3 getAnotherVertexPositionByEdge(Face& face, Edge& edge);
+    void flipAllNLDEdgeInFace(Face* face);
+    void flipEdge(Edge* edge);
+    glm::vec3 getAnotherVertexPositionByEdge(Face* face, Edge* edge);
     int findVertexByPoint(glm::vec3 p);
 };
 

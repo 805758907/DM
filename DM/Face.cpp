@@ -7,7 +7,12 @@ void Face::setNormal(float i, float j, float k) {
     normal = glm::normalize(nv);
 }
 
-void Face::setVertex(std::vector<Vertex>& vs){
+void Face::setNormal(glm::vec3& vec) {
+    glm::vec3 n(vec.x, vec.y, vec.z);
+    normal = n;
+}
+
+void Face::setVertex(std::vector<Vertex*>& vs){
     vertexs = vs;
 }
 
