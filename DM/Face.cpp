@@ -23,3 +23,21 @@ void Face::setId(int id){
 Face::~Face() {
 //    delete vertexs;
 }
+
+void Face::deleteChild(Face* child){
+    for (auto it = children.begin(); it != children.end(); it++) {
+        if ((*it)->faceId == child->faceId) {
+            children.erase(it);
+            break;
+        }
+    }
+}
+
+void Face::deleteBorder(Edge* edge){
+    for (auto it = borders.begin(); it != borders.end(); it++) {
+        if ((*it)->edgeId == edge->edgeId) {
+            borders.erase(it);
+            break;
+        }
+    }
+}

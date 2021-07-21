@@ -272,7 +272,9 @@ bool Mesh::readSTLASCII(const char *fileName) {
                 fileSTL >> v3;
                 glm::vec3 p = glm::vec3(v1, v2, v3);
 
-                int id = findVertexByPoint(p);
+                Vertex* vertex = generateNewVertex(p);
+                vs.push_back(vertex);
+/*                int id = findVertexByPoint(p);
                 if (id == -1) {			//没找到，该point是新的
                     Vertex* vertex = new Vertex();
                     vertex->init(p);
@@ -285,6 +287,7 @@ bool Mesh::readSTLASCII(const char *fileName) {
                 else {
                     vs.push_back(vertexes[id]);
                 }
+*/
             }
             fileSTL >> buf;     //endloop
             fileSTL >> buf;     //endfacet
@@ -293,7 +296,7 @@ bool Mesh::readSTLASCII(const char *fileName) {
             face->setVertex(vs);
             generateEdge(face, true);
 
-
+            face->children.push_back(face);
             faces.push_back(face);
             faceId++;
             faceNum++;
@@ -338,7 +341,9 @@ bool Mesh::readSTLBinary(const char* fileName) {
             fread(&v3, 4, 1, fStl);
             glm::vec3 p = glm::vec3((float)v1, (float)v2, (float)v3);
 
-            int id = findVertexByPoint(p);
+            Vertex* vertex = generateNewVertex(p);
+            vs.push_back(vertex);
+/*          int id = findVertexByPoint(p);
             if (id == -1) {			//没找到，该point是新的
                 Vertex* vertex = new Vertex();
                 vertex->init(p);
@@ -350,11 +355,13 @@ bool Mesh::readSTLBinary(const char* fileName) {
             }else {
                 vs.push_back(vertexes[id]);
             }
+*/
         }
 
         fread(face->buf, 2, 1, fStl);//读取保留项数据，这一项一般没什么用，这里选择读取是为了移动文件指针
         face->setId(faceId);
         face->setVertex(vs);
+        face->children.push_back(face);
         generateEdge(face,true);
 
 
@@ -471,7 +478,7 @@ bool Mesh::saveSTLBinary(const char * fileName) {
 }
 
 
-int Mesh::findVertexByPoint(glm::vec3 p) {
+int Mesh::findVertexByPoint(glm::vec3& p) {
     auto it = m_hash_point.find(p);
     if (it != m_hash_point.end()) {
         return it->second;
@@ -481,7 +488,7 @@ int Mesh::findVertexByPoint(glm::vec3 p) {
     }
 }
 
-void Mesh::generateEdge(Face* face, bool calAngle){
+void Mesh::generateEdge(Face* face, bool meshEdge){
     Edge* edge1 = new Edge();
     Edge* edge2 = new Edge();
     Edge* edge3 = new Edge();
@@ -506,8 +513,11 @@ void Mesh::generateEdge(Face* face, bool calAngle){
     if (!(it == edges.end()) && ((*it)->vertexe1->vertexId == edge1->vertexe1->vertexId)
         && ((*it)->vertexe2->vertexId == edge1->vertexe2->vertexId)) {     //已存在的edge
         length01 = (*it)->length;
-        edge1 = (*it);
         (*it)->faceId.insert(face->faceId);
+        if (meshEdge) {
+            (*it)->meshFaceId.insert(face->faceId);
+        }
+        edge1 = (*it);
     }
     else {
         
@@ -522,10 +532,14 @@ void Mesh::generateEdge(Face* face, bool calAngle){
         edge1->length = length01;
         edge1->edgeId = edges.size();
         edge1->faceId.insert(face->faceId);
+        if (meshEdge) {
+            edge1->meshFaceId.insert(face->faceId);
+        }
         edge1->parent = edge1;
         edges.insert(it, edge1);
     }
     face->edges.push_back(edge1);
+    face->borders.push_back(edge1);
     
 
     if (face->vertexs[1]->vertexId < face->vertexs[2]->vertexId) {
@@ -547,6 +561,9 @@ void Mesh::generateEdge(Face* face, bool calAngle){
         length12 = (*it)->length;
         edge2 = (*it);
         (*it)->faceId.insert(face->faceId);
+        if (meshEdge) {
+            (*it)->meshFaceId.insert(face->faceId);
+        }
     }
     else {
         length12 = sqrt(pow((edge2->vertexe1->position.x - edge2->vertexe2->position.x), 2)
@@ -560,12 +577,15 @@ void Mesh::generateEdge(Face* face, bool calAngle){
         edge2->length = length12;
         edge2->edgeId = edges.size();
         edge2->faceId.insert(face->faceId);
+        if (meshEdge) {
+            edge2->meshFaceId.insert(face->faceId);
+        }
         edge2->parent = edge2;
         edges.insert(it, edge2);
 
     }
     face->edges.push_back(edge2);
-    
+    face->borders.push_back(edge2);
 
     if (face->vertexs[0]->vertexId < face->vertexs[2]->vertexId) {
         edge3->vertexe1 = face->vertexs[0];
@@ -584,8 +604,11 @@ void Mesh::generateEdge(Face* face, bool calAngle){
     if (!(it == edges.end()) && ((*it)->vertexe1->vertexId == edge3->vertexe1->vertexId)
         && ((*it)->vertexe2->vertexId == edge3->vertexe2->vertexId)) {     //已存在的edge
         length02 = (*it)->length;
-        edge3 = (*it);
         (*it)->faceId.insert(face->faceId);
+        if (meshEdge) {
+            (*it)->meshFaceId.insert(face->faceId);
+        }
+        edge3 = (*it);
     }
     else {
         length02 = sqrt(pow((edge3->vertexe1->position.x - edge3->vertexe2->position.x), 2)
@@ -599,36 +622,40 @@ void Mesh::generateEdge(Face* face, bool calAngle){
         edge3->length = length02;
         edge3->edgeId = edges.size();
         edge3->faceId.insert(face->faceId);
+        if (meshEdge) {
+            edge3->meshFaceId.insert(face->faceId);
+        }
         edge3->parent = edge3;
         edges.insert(it, edge3);
 
     }
     face->edges.push_back(edge3);
+    face->borders.push_back(edge3);
     
     //求角度
-    if (calAngle) {
-        double cosTheta0 = glm::dot((face->vertexs[1]->position - face->vertexs[0]->position), (face->vertexs[2]->position - face->vertexs[0]->position)) / length01 / length02;
-        double sinTheta0 = sqrt(1 - cosTheta0 * cosTheta0);
-        if (sinTheta0 < sinThetaMin) {
-            sinThetaMin = sinTheta0;
-        }
-        face->angles.push_back(cosTheta0);
-        double cosTheta1 = glm::dot((face->vertexs[0]->position - face->vertexs[1]->position), (face->vertexs[2]->position - face->vertexs[1]->position)) / length01 / length12;
-        double sinTheta1 = sqrt(1 - cosTheta1 * cosTheta1);
-        if (sinTheta1 < sinThetaMin) {
-            sinThetaMin = sinTheta1;
-        }
-        face->angles.push_back(cosTheta1);
-        double cosTheta2 = glm::dot((face->vertexs[0]->position - face->vertexs[2]->position), (face->vertexs[1]->position - face->vertexs[2]->position)) / length12 / length02;
-        double sinTheta2 = sqrt(1 - cosTheta2 * cosTheta2);
-        if (sinTheta2 < sinThetaMin) {
-            sinThetaMin = sinTheta2;
-        }
-        face->angles.push_back(cosTheta2);
-        //if (sinThetaMin < 0.001) {
-            //printf("11");
-       // }
+    
+    double cosTheta0 = glm::dot((face->vertexs[1]->position - face->vertexs[0]->position), (face->vertexs[2]->position - face->vertexs[0]->position)) / length01 / length02;
+    double sinTheta0 = sqrt(1 - cosTheta0 * cosTheta0);
+    if (sinTheta0 < sinThetaMin) {
+        sinThetaMin = sinTheta0;
     }
+    face->angles.push_back(cosTheta0);
+    double cosTheta1 = glm::dot((face->vertexs[0]->position - face->vertexs[1]->position), (face->vertexs[2]->position - face->vertexs[1]->position)) / length01 / length12;
+    double sinTheta1 = sqrt(1 - cosTheta1 * cosTheta1);
+    if (sinTheta1 < sinThetaMin) {
+        sinThetaMin = sinTheta1;
+    }
+    face->angles.push_back(cosTheta1);
+    double cosTheta2 = glm::dot((face->vertexs[0]->position - face->vertexs[2]->position), (face->vertexs[1]->position - face->vertexs[2]->position)) / length12 / length02;
+    double sinTheta2 = sqrt(1 - cosTheta2 * cosTheta2);
+    if (sinTheta2 < sinThetaMin) {
+        sinThetaMin = sinTheta2;
+    }
+    face->angles.push_back(cosTheta2);
+    //if (sinThetaMin < 0.001) {
+        //printf("11");
+    // }
+    
     
 }
 
@@ -650,29 +677,30 @@ void Mesh::generateDM(){
         (*it)->constructCe(rhoV, rhoE);
     } 
     findAllNLDEdges();
-    while (!NLDEdges.empty()) {
+   while (!NLDEdges.empty()) {
         Edge* currentEdge = NLDEdges.top();
         NLDEdges.pop();
-        while (currentEdge->flippable == true && !NLDEdges.empty()) {
-            currentEdge = NLDEdges.top();
-            NLDEdges.pop();
+        currentEdge->inStack = false;
+        if (currentEdge->flippable == false) {
+            handleNonFlippableNLDEdge2(currentEdge);
         }
-        handleNonFlippableNLDEdge(currentEdge);
 
     }
-}
+ }
 
 /*
 * 先把这条边所属的两个三角面以及该三角面的另外四条边对应的三角面（总共6个面）旋转到同一个平面上,再求I0-I4,找到公共部分
 * 分割，添加四条边，四个面
 * 遍历这四个面的所有边，翻NLD，把不能翻转的加入栈中
 */
-void Mesh::handleNonFlippableNLDEdge(Edge* edge){   
+void Mesh::handleNonFlippableNLDEdge1(Edge* edge){   
     Vertex* vertexA = edge->vertexe1;
     Vertex* vertexB = edge->vertexe2;
     Face* faceABD = faces[*(edge->faceId.begin())];
     Face* faceABC = faces[*(++edge->faceId.begin())];
-    
+    if (faceABD->faceId == 0xf2d) {
+        printf("%d", faceABD->edges.size());
+    }
     //以faceABD为基准平面，找到faceABC顶点旋转后的位置v',以此来构建外接圆与Is
     Vertex* vertexC = getThirdVertexInFace(faceABC, vertexA->vertexId, vertexB->vertexId);  
     Vertex* vertexD = getThirdVertexInFace(faceABD, vertexA->vertexId, vertexB->vertexId);
@@ -847,7 +875,12 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge){
     glm::vec3 p1 = glm::vec3(vertexA->position.x + tRegion.first * (vertexB->position.x - vertexA->position.x), vertexA->position.y + tRegion.first * (vertexB->position.y - vertexA->position.y), vertexA->position.z + tRegion.first * (vertexB->position.z - vertexA->position.z));
     glm::vec3 p2 = glm::vec3(vertexA->position.x + tRegion.second * (vertexB->position.x - vertexA->position.x), vertexA->position.y + tRegion.second * (vertexB->position.y - vertexA->position.y), vertexA->position.z + tRegion.second * (vertexB->position.z - vertexA->position.z));
 
-    glm::vec3 splitPosition = edge->parent->getSplitePosition(p1, p2);
+    //找到e ∈ E
+    Edge* eParent = edge->parent;
+    while (eParent != eParent->parent) {
+        eParent = eParent->parent;
+    }
+    glm::vec3 splitPosition = eParent->getSplitePosition(p1, p2);
 
 
     //分割：添加点
@@ -865,53 +898,11 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge){
     }
 
     //添加四个面
-    Face* faceACS = new Face();
     
-    faceACS->setNormal(faceABC->normal);
-    std::vector<Vertex*> vs1;
-    vs1.push_back(vertexA);
-    vs1.push_back(vertexS);
-    vs1.push_back(vertexC);
-
-    faceACS->setId(faces.size());
-    faceACS->setVertex(vs1);
-    faces.push_back(faceACS);
-
-    Face* faceBCS = new Face();
-
-    faceBCS->setNormal(faceABC->normal);
-    std::vector<Vertex*> vs2;
-    vs2.push_back(vertexB);
-    vs2.push_back(vertexC);
-    vs2.push_back(vertexS);
-
-    faceBCS->setId(faces.size());
-    faceBCS->setVertex(vs2);
-    faces.push_back(faceBCS);
-
-    Face* faceADS = new Face();
-
-    faceADS->setNormal(faceABD->normal);
-    std::vector<Vertex*> vs3;
-    vs3.push_back(vertexA);
-    vs3.push_back(vertexD);
-    vs3.push_back(vertexS);
-
-    faceADS->setId(faces.size());
-    faceADS->setVertex(vs3);
-    faces.push_back(faceADS);
-    
-    Face* faceBDS = new Face();
-
-    faceBDS->setNormal(faceABD->normal);
-    std::vector<Vertex*> vs4;
-    vs4.push_back(vertexB);
-    vs4.push_back(vertexS);
-    vs4.push_back(vertexD);
-
-    faceBDS->setId(faces.size());
-    faceBDS->setVertex(vs4);
-    faces.push_back(faceBDS);
+    Face* faceACS = generateNewFace(faceABC->normal, vertexA, vertexC, vertexS);
+    Face* faceBCS = generateNewFace(faceABC->normal, vertexB, vertexS, vertexC);
+    Face* faceADS = generateNewFace(faceABD->normal, vertexA, vertexS, vertexD);  
+    Face* faceBDS = generateNewFace(faceABD->normal, vertexB, vertexD, vertexS);
 
     //更新ABC和ABD两个面原来边的面所属信息
  /*   for (auto it = faceABC.edges.begin(); it != faceABC.edges.end(); it++) {
@@ -948,37 +939,286 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge){
     iter = edgeBC->faceId.find(faceABC->faceId);
     edgeBC->faceId.erase(iter);
 
-    generateEdge(faceACS, true);
-    generateEdge(faceADS, true);
-    generateEdge(faceBCS, true);
-    generateEdge(faceBDS, true);
+    for (auto it = faceACS->edges.begin(); it != faceACS->edges.begin(); it++) {
+        if (((*it)->vertexe1->vertexId == vertexA->vertexId && (*it)->vertexe2->vertexId == vertexS->vertexId) ||
+            ((*it)->vertexe1->vertexId == vertexS->vertexId && (*it)->vertexe2->vertexId == vertexA->vertexId)) {
+            (*it)->parent = eParent;
+        }
+    }
+    for (auto it = faceBCS->edges.begin(); it != faceBCS->edges.begin(); it++) {
+        if (((*it)->vertexe1->vertexId == vertexB->vertexId && (*it)->vertexe2->vertexId == vertexS->vertexId) ||
+            ((*it)->vertexe1->vertexId == vertexS->vertexId && (*it)->vertexe2->vertexId == vertexB->vertexId)) {
+            (*it)->parent = eParent;
+        }
+    }
 
     //翻转所有flippable的NLD
-    flipAllNLDEdgeInFace(faceADS);
-    flipAllNLDEdgeInFace(faceBCS);
+//    flipAllNLDEdgeInFace(faceADS);
+//    flipAllNLDEdgeInFace(faceBCS);
+    if (isNLD(edgeAD)) {
+        if (edgeAD->flippable == true) {
+            flipEdge(edgeAD);
+        }
+        else if(edgeAD->inStack == false){
+            NLDEdges.push(edgeAD);
+        }
+    }
+    if (isNLD(edgeBC)) {
+        if (edgeBC->flippable == true) {
+            flipEdge(edgeBC);
+        }
+        else if (edgeBC->inStack == false) {
+            NLDEdges.push(edgeBC);
+        }
+    }
     if (isNLD(edgeBD)) {
         if (edgeBD->flippable == true) {
             flipEdge(edgeBD);
+        }
+        else if (edgeBD->inStack == false) {
+            NLDEdges.push(edgeBD);
         }
     }
     if (isNLD(edgeAC)) {
         if (edgeAC->flippable == true) {
             flipEdge(edgeAC);
         }
+        else if (edgeAC->inStack == false) {
+            NLDEdges.push(edgeAC);
+        }
     }
 
-    if (isNLD(edgeAD)) {
-        NLDEdges.push(edgeAD);
+}
+
+void Mesh::handleNonFlippableNLDEdge2(Edge* edge) {
+    Vertex* vertexA = edge->vertexe1;
+    Vertex* vertexB = edge->vertexe2;
+    Face* faceABD = faces[*(edge->faceId.begin())];
+    Face* faceABC = faces[*(++edge->faceId.begin())];
+    //以faceABD为基准平面，找到faceABC顶点旋转后的位置v',以此来构建外接圆与Is
+    Vertex* vertexC = getThirdVertexInFace(faceABC, vertexA->vertexId, vertexB->vertexId);
+    Vertex* vertexD = getThirdVertexInFace(faceABD, vertexA->vertexId, vertexB->vertexId);
+
+    glm::vec3 normalABD = faceABD->normal;
+    glm::vec3 normalABC = faceABC->normal;
+    glm::vec4 vertexCPosition = glm::vec4(vertexC->position, 1);
+
+    Edge* edgeAC = nullptr, * edgeBC = nullptr;
+    for (auto it = faceABC->edges.begin(); it != faceABC->edges.end(); it++) {
+        if ((*it)->edgeId != edge->edgeId) {
+            if ((*it)->vertexe1->vertexId == vertexA->vertexId || (*it)->vertexe2->vertexId == vertexA->vertexId) {
+                edgeAC = (*it);
+            }
+            else {
+                edgeBC = (*it);
+            }
+        }
     }
-    if (isNLD(edgeBD)) {
-        NLDEdges.push(edgeBD);
+    glm::vec4 vertexEPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABC, edgeAC), 1);
+    glm::vec4 vertexFPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABC, edgeBC), 1);
+ 
+    float cosAngle = glm::dot(normalABD, normalABC);   //都是单位向量
+    float angle = acos(cosAngle);                   //旋转的弧度
+    glm::vec3 ve = glm::normalize(vertexA->position - vertexB->position); //该边的向量
+    glm::mat4 trans = glm::mat4(1.0f);              //创建单位矩阵
+    trans = glm::rotate(trans, angle, ve);          //旋转矩阵
+
+    //把旋转轴移动到原点，再旋转，再移动回来
+    glm::mat4 moveTo = glm::mat4(1.0f);
+    moveTo = glm::translate(moveTo, -vertexB->position);
+
+    glm::mat4 moveBack = glm::mat4(1.0f);
+    moveBack = glm::translate(moveBack, vertexB->position);
+
+    //不只是旋转对角，还要把相关的另两个三角面的对角也旋转了
+    glm::vec4 newVertexCPosition = moveBack * trans * moveTo * vertexCPosition;
+    glm::vec4 newVertexEPosition = moveBack * trans * moveTo * vertexEPosition;
+    glm::vec4 newVertexFPosition = moveBack * trans * moveTo * vertexFPosition;
+
+    //再旋转另外两个三角面到达在同一平面
+    glm::vec3 newVertexEPos = glm::vec3(newVertexEPosition);
+    glm::vec3 newVertexCPos = glm::vec3(newVertexCPosition);
+    glm::vec3 normalACE = calNormal(vertexA->position, newVertexCPos, newVertexEPos);
+    float cosAngleE = glm::dot(normalABD, normalACE);   //都是单位向量
+    float angleE = acos(cosAngleE);                   //旋转的弧度
+    glm::vec3 newAC = glm::normalize(newVertexCPos - vertexA->position); //该边的向量
+    trans = glm::mat4(1.0f);              //创建单位矩阵
+    trans = glm::rotate(trans, angleE, newAC);          //旋转矩阵
+    moveTo = glm::mat4(1.0f);
+    moveTo = glm::translate(moveTo, -vertexA->position);
+    moveBack = glm::mat4(1.0f);
+    moveBack = glm::translate(moveBack, vertexA->position);
+    newVertexEPosition = moveBack * trans * moveTo * newVertexEPosition;
+    newVertexEPos = glm::vec3(newVertexEPosition);
+
+    glm::vec3 newVertexFPos = glm::vec3(newVertexFPosition);
+    glm::vec3 normalBCF = calNormal(vertexB->position, newVertexCPos, newVertexEPos);
+    float cosAngleF = glm::dot(normalABD, normalBCF);   //都是单位向量
+    float angleF = acos(cosAngleF);                   //旋转的弧度
+    glm::vec3 newBC = glm::normalize(newVertexCPos - vertexB->position); //该边的向量
+    trans = glm::mat4(1.0f);              //创建单位矩阵
+    trans = glm::rotate(trans, -angleF, newBC);          //旋转矩阵
+    moveTo = glm::mat4(1.0f);
+    moveTo = glm::translate(moveTo, -vertexB->position);
+    moveBack = glm::mat4(1.0f);
+    moveBack = glm::translate(moveBack, vertexB->position);
+    newVertexFPosition = moveBack * trans * moveTo * newVertexFPosition;
+    newVertexFPos = glm::vec3(newVertexFPosition);
+
+    //再旋转与ABD相邻的两个三角面到达在同一平面
+
+    Edge* edgeAD = nullptr, * edgeBD = nullptr;
+    for (auto it = faceABD->edges.begin(); it != faceABD->edges.end(); it++) {
+        if ((*it)->edgeId != edge->edgeId) {
+            if ((*it)->vertexe1->vertexId == vertexA->vertexId || (*it)->vertexe2->vertexId == vertexA->vertexId) {
+                edgeAD = (*it);
+            }
+            else {
+                edgeBD = (*it);
+            }
+        }
     }
-    if (isNLD(edgeBC)) {
-        NLDEdges.push(edgeBC);
+    //求另两个三角面的顶点
+    glm::vec4 vertexHPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABD, edgeAD), 1);
+    glm::vec4 vertexGPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABD, edgeBD), 1);
+    glm::vec3 vertexHPos = glm::vec3(vertexHPosition);
+
+    glm::vec3 normalADH = calNormal(vertexA->position, vertexD->position, vertexHPos);
+    float cosAngleH = glm::dot(normalABD, normalADH);   //都是单位向量
+    float angleH = acos(cosAngleH);                   //旋转的弧度
+    glm::vec3 newAD = glm::normalize(vertexD->position - vertexA->position); //该边的向量
+    trans = glm::mat4(1.0f);              //创建单位矩阵
+    trans = glm::rotate(trans, -angleH, newAD);          //旋转矩阵
+    moveTo = glm::mat4(1.0f);
+    moveTo = glm::translate(moveTo, -vertexA->position);
+    moveBack = glm::mat4(1.0f);
+    moveBack = glm::translate(moveBack, vertexA->position);
+    vertexHPosition = moveBack * trans * moveTo * vertexHPosition;
+    vertexHPos = glm::vec3(vertexHPosition);
+
+    glm::vec3 vertexGPos = glm::vec3(vertexGPosition);
+    glm::vec3 normalBDG = calNormal(vertexB->position, vertexGPos, vertexD->position);
+    float cosAngleG = glm::dot(normalABD, normalBDG);   //都是单位向量
+    float angleG = acos(cosAngleG);                   //旋转的弧度
+    glm::vec3 newBD = glm::normalize(vertexD->position - vertexB->position); //该边的向量
+    trans = glm::mat4(1.0f);              //创建单位矩阵
+    trans = glm::rotate(trans, -angleG, newBC);          //旋转矩阵
+    moveTo = glm::mat4(1.0f);
+    moveTo = glm::translate(moveTo, -vertexB->position);
+    moveBack = glm::mat4(1.0f);
+    moveBack = glm::translate(moveBack, vertexB->position);
+    vertexGPosition = moveBack * trans * moveTo * vertexGPosition;
+    vertexGPos = glm::vec3(vertexGPosition);
+
+    Edge* parent = edge->parent;
+    Vertex* pStart = parent->vertexe1;
+    Vertex* pEnd = parent->vertexe2;
+    
+    glm::vec3 center = solveCenterPointOfCircle(vertexA->position, vertexD->position, newVertexCPos);
+    float tEnd = getAnotherPoint(vertexB->position, vertexA->position, center);
+    center = solveCenterPointOfCircle(vertexB->position, vertexD->position, newVertexCPos);
+    float tStart = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
+
+    if (tEnd > 1) {
+        tEnd = 1;
     }
-    if (isNLD(edgeAC)) {
-        NLDEdges.push(edgeAC);
+    if (tStart < 0) {
+        tStart = 0;
     }
+
+    center = solveCenterPointOfCircle(vertexA->position, newVertexEPos, newVertexCPos);
+    float tE = getAnotherPoint(vertexB->position, vertexA->position, center);
+
+    center = solveCenterPointOfCircle(vertexA->position, vertexD->position, vertexHPos);
+    float tH = getAnotherPoint(vertexB->position, vertexA->position, center);
+
+    center = solveCenterPointOfCircle(vertexB->position, newVertexCPos, newVertexFPos);
+    float tF = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
+
+    center = solveCenterPointOfCircle(vertexB->position, vertexD->position, vertexGPos);
+    float tG = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
+
+    std::pair<float, float> tRegion = getSplitRegion(tStart, tEnd, tE, tH, tF, tG);//相对于AB而言
+    glm::vec3 p1 = glm::vec3(vertexA->position.x + tRegion.first * (vertexB->position.x - vertexA->position.x), vertexA->position.y + tRegion.first * (vertexB->position.y - vertexA->position.y), vertexA->position.z + tRegion.first * (vertexB->position.z - vertexA->position.z));
+    glm::vec3 p2 = glm::vec3(vertexA->position.x + tRegion.second * (vertexB->position.x - vertexA->position.x), vertexA->position.y + tRegion.second * (vertexB->position.y - vertexA->position.y), vertexA->position.z + tRegion.second * (vertexB->position.z - vertexA->position.z));
+
+    //找到e ∈ E
+    Edge* parentEdge = edge->parent;
+    glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
+
+    Face* parentFaceOfABC = getParentFace(parentEdge, faceABC);
+    Face* parentFaceOfABD = getParentFace(parentEdge, faceABD);
+
+    //分割：添加点
+    Vertex* vertexS = generateNewVertex(splitPosition);
+    //添加四个面
+    Face* faceACS = generateNewFace(faceABC->normal, vertexA, vertexC, vertexS);
+    Face* faceBCS = generateNewFace(faceABC->normal, vertexB, vertexS, vertexC);
+    Face* faceADS = generateNewFace(faceABD->normal, vertexA, vertexS, vertexD);
+    Face* faceBDS = generateNewFace(faceABD->normal, vertexB, vertexD, vertexS);
+
+    parentFaceOfABC->deleteChild(faceABC);
+/*    for (auto faceIt = faces.rbegin(); faceIt != faces.rend(); faceIt++) {
+        if ((*faceIt)->faceId == faceABC->faceId) {
+            faces.erase((++faceIt).base());
+            break;
+        }
+    }
+*/    parentFaceOfABD->deleteChild(faceABD);
+/*    for (auto faceIt = faces.rbegin(); faceIt != faces.rend(); faceIt++) {
+        if ((*faceIt)->faceId == faceABD->faceId) {
+            faces.erase((++faceIt).base());
+            break;
+        }
+    }
+*/
+    parentFaceOfABC->children.push_back(faceACS);
+    parentFaceOfABC->children.push_back(faceBCS);
+    parentFaceOfABD->children.push_back(faceADS);
+    parentFaceOfABD->children.push_back(faceBDS);
+
+    //更新ABC和ABD两个面原来边的面所属信息
+    auto iter = edgeAD->faceId.find(faceABD->faceId);
+    edgeAD->faceId.erase(iter);
+    iter = edgeBD->faceId.find(faceABD->faceId);
+    edgeBD->faceId.erase(iter);
+    iter = edgeAC->faceId.find(faceABC->faceId);
+    edgeAC->faceId.erase(iter);
+    iter = edgeBC->faceId.find(faceABC->faceId);
+    edgeBC->faceId.erase(iter);
+    iter = edge->faceId.find(faceABC->faceId);
+    edge->faceId.erase(iter);
+    iter = edge->faceId.find(faceABD->faceId);
+    edge->faceId.erase(iter);
+
+    parentFaceOfABC->deleteBorder(edge);
+    parentFaceOfABD->deleteBorder(edge);
+
+    for (auto it = faceACS->edges.begin(); it != faceACS->edges.begin(); it++) {
+        if (((*it)->vertexe1->vertexId == vertexA->vertexId && (*it)->vertexe2->vertexId == vertexS->vertexId) ||
+            ((*it)->vertexe1->vertexId == vertexS->vertexId && (*it)->vertexe2->vertexId == vertexA->vertexId)) {
+            (*it)->parent = parentEdge;
+            parentFaceOfABC->borders.push_back((*it));
+            parentFaceOfABD->borders.push_back((*it));
+            break;
+        }
+    }
+    for (auto it = faceBCS->edges.begin(); it != faceBCS->edges.begin(); it++) {
+        if (((*it)->vertexe1->vertexId == vertexB->vertexId && (*it)->vertexe2->vertexId == vertexS->vertexId) ||
+            ((*it)->vertexe1->vertexId == vertexS->vertexId && (*it)->vertexe2->vertexId == vertexB->vertexId)) {
+            (*it)->parent = parentEdge;
+            parentFaceOfABC->borders.push_back((*it));
+            parentFaceOfABD->borders.push_back((*it));
+            break;
+        }
+    }
+
+    //翻转parentFaceOfABC和parentFaceOfABD中所有flippable的NLD
+    flipAllNLDEdgeInFace(parentFaceOfABC);
+    flipAllNLDEdgeInFace(parentFaceOfABD);
+
+    addNewNonNLDEdge(parentFaceOfABC);
+    addNewNonNLDEdge(parentFaceOfABD);
 
 }
 
@@ -1033,40 +1273,51 @@ void Mesh::findAllNLDEdges(){
     for (auto it = edges.begin(); it != edges.end(); it++) {
         if (isNLD(*it)) {
             NLDEdges.push(*it);
+            (*it)->inStack = true;
         }
     }
 }
 
 void Mesh::flipAllNLDEdgeInFace(Face* face){
-    for (auto it = face->edges.begin(); it != face->edges.end(); it++) {
-        if (isNLD(*it)) {
-            if ((*it)->flippable == true) {
-                flipEdge((*it));
+    std::list<int> visitedEdge;
+    for (auto childIt = face->children.begin(); childIt != face->children.end(); childIt++) {
+        for (auto edgeIt = (*childIt)->edges.begin(); edgeIt != (*childIt)->edges.end(); edgeIt++) {
+            bool visited = false;
+            auto it = visitedEdge.begin();
+            for (; it != visitedEdge.end(); ) {
+                if ((*it) < face->faceId) {
+                    it++;
+                }
+                else if ((*it) == face->faceId) {   //该边已经访问过
+                    visited = true;
+                    break;
+                }
+                else {
+                    break;
+                }
+            }
+            if (!visited) {
+                visitedEdge.insert(it, face->faceId);
+                if (isNLD(*edgeIt)) {
+                    if ((*edgeIt)->flippable == true) {
+                        flipEdge((*edgeIt));
+                    }
+                }
             }
         }
     }
 }
 
 void Mesh::flipEdge(Edge* edgeAB){
+    printf("flip %d", edgeAB->edgeId);
     Vertex* vertexA = edgeAB->vertexe1;
     Vertex* vertexB = edgeAB->vertexe2;
     Face* faceABC = faces[*(edgeAB->faceId.begin())];
     Face* faceABD = faces[*(++edgeAB->faceId.begin())];
 
-    Vertex* vertexC = nullptr;
-    for (auto it = faceABC->vertexs.begin(); it != faceABC->vertexs.end(); it++) {
-        if ((*it)->vertexId != vertexA->vertexId && (*it)->vertexId != vertexB->vertexId) {
-            vertexC = *it;
-            break;
-        }
-    }
-    Vertex* vertexD = nullptr;
-    for (auto it = faceABD->vertexs.begin(); it != faceABD->vertexs.end(); it++) {
-        if ((*it)->vertexId != vertexA->vertexId && (*it)->vertexId != vertexB->vertexId) {
-            vertexD = *it;
-            break;
-        }
-    }
+    Vertex* vertexC = getThirdVertexInFace(faceABC, vertexA->vertexId,vertexB->vertexId);
+    Vertex* vertexD = getThirdVertexInFace(faceABD, vertexA->vertexId, vertexB->vertexId);
+    
     Edge* edgeAC = nullptr,* edgeBC = nullptr;
     for (auto it = faceABC->edges.begin(); it != faceABC->edges.end(); it++) {
         if ((*it)->edgeId != edgeAB->edgeId) {
@@ -1090,23 +1341,8 @@ void Mesh::flipEdge(Edge* edgeAB){
         }
     }
 
-    Face* faceACD = new Face();
-    faceACD->setNormal(faceABC->normal);
-    std::vector<Vertex*> vs1;
-    vs1.push_back(vertexA);
-    vs1.push_back(vertexD);
-    vs1.push_back(vertexC);
-
-    faceACD->setId(faces.size());
-    faceACD->setVertex(vs1);
-    faces.push_back(faceACD);
-
-    Face* faceBCD = new Face();
-    faceBCD->setNormal(faceABC->normal);
-    std::vector<Vertex*> vs2;
-    vs2.push_back(vertexC);
-    vs2.push_back(vertexD);
-    vs2.push_back(vertexB);
+    Face* faceACD = generateNewFace(faceABC->normal, vertexA, vertexD, vertexC);
+    Face* faceBCD = generateNewFace(faceABC->normal, vertexC, vertexD, vertexB);
 
     auto iter = edgeAD->faceId.find(faceABD->faceId);
     edgeAD->faceId.erase(iter);
@@ -1116,9 +1352,7 @@ void Mesh::flipEdge(Edge* edgeAB){
     edgeAC->faceId.erase(iter);
     iter = edgeBC->faceId.find(faceABC->faceId);
     edgeBC->faceId.erase(iter);
-
-    generateEdge(faceACD, true);
-    generateEdge(faceBCD, true);
+    
     //删除边
     for (auto it = edges.begin(); it != edges.end(); it++) {
         if ((*it)->edgeId == edgeAB->edgeId) {
@@ -1127,7 +1361,7 @@ void Mesh::flipEdge(Edge* edgeAB){
             break;
         }
     }
-    //删除面
+/*    //删除面
     for (auto it = faces.begin(); it != faces.end();){
         if ((*it)->faceId == faceABD->faceId || (*it)->faceId == faceABC->faceId){
             delete(*it);
@@ -1135,6 +1369,61 @@ void Mesh::flipEdge(Edge* edgeAB){
         }
         else
            ++it;
+    }
+*/
+}
+
+Face* Mesh::getParentFace(Edge* edge, Face* childFace){
+    Face* face1 = faces[*(edge->meshFaceId.begin())];
+    for (auto it = face1->children.begin(); it != face1->children.end(); it++) {
+        if ((*it)->faceId == childFace->faceId) {
+            return face1;
+        }
+    }
+    return faces[*(++edge->meshFaceId.begin())];
+}
+
+Vertex* Mesh::generateNewVertex(glm::vec3& position){
+    int id = findVertexByPoint(position);
+    Vertex* vertex = nullptr;
+    if (id == -1) {			//没找到，该point是新的
+        vertex = new Vertex();
+        vertex->init(position);
+        vertex->setId(vertexes.size());
+        m_hash_point[position] = vertexes.size();
+        vertexes.push_back(vertex);
+    }
+    else {
+        vertex = vertexes[id];
+    }
+    return vertex;
+}
+
+Face* Mesh::generateNewFace(glm::vec3& normal, Vertex* v1, Vertex* v2, Vertex* v3){
+    Face* face = new Face();
+
+    face->setNormal(normal);
+    std::vector<Vertex*> vs;
+    vs.push_back(v1);
+    vs.push_back(v2);
+    vs.push_back(v3);
+
+    face->setId(faces.size());
+    face->setVertex(vs);
+    face->isMesh = false;
+    faces.push_back(face);
+
+    generateEdge(face, false);
+
+    return face;
+}
+
+void Mesh::addNewNonNLDEdge(Face* face){
+    for (auto it = face->borders.begin(); it != face->borders.end(); it++) {
+        if ((*it)->inStack == false && isNLD(*it)) {
+            NLDEdges.push(*it);
+            (*it)->inStack == true;
+        }
     }
 }
 
@@ -1153,13 +1442,7 @@ glm::vec3 Mesh::getAnotherVertexPositionByEdge(Face* face, Edge* edge){
     }
     
     //求顶点
-    Vertex* vertexE = nullptr;
-    for (auto it = faceACE->vertexs.begin(); it != faceACE->vertexs.end(); it++) {
-        if ((*it)->vertexId != vertexA->vertexId && (*it)->vertexId != vertexC->vertexId) {
-            vertexE = *it;
-            break;
-        }
-    }
+    Vertex* vertexE = getThirdVertexInFace(faceACE, vertexA->vertexId, vertexC->vertexId);
     return glm::vec3(vertexE->position);
 }
 

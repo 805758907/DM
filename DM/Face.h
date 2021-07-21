@@ -11,12 +11,17 @@ public:
     std::vector<double> angles;
     char buf[2];
     int faceId;
+    std::list<Face*> children;//Mesh的面只包含其他face，非Mesh的面只包含自己
+    bool isMesh = true;
+    std::list<Edge*> borders;
 public:
     Face();
     void setNormal(float i, float j, float k);
     void setNormal(glm::vec3& vec);
     void setVertex(std::vector<Vertex*>& vs);
     void setId(int id);
+    void deleteChild(Face* child);
+    void deleteBorder(Edge* edge);
     ~Face();
 };
 

@@ -15,9 +15,11 @@ class Edge
 
 public:
 	bool flippable = false;
+	bool inStack = false;
 	Edge* parent;
 	double length;
-	std::set<int> faceId;
+	std::set<int> faceId;		//当前所在的三角面
+	std::set<int> meshFaceId;	//所在的原三角面
 	Vertex* vertexe1;
 	Vertex* vertexe2;
 	int edgeId;

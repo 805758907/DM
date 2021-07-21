@@ -64,16 +64,21 @@ public:
     bool saveSTLBinary(const char * fileName);
     bool saveSTLASCII(const char * fileName);
 
-    void generateEdge(Face* face, bool calAngle);
+    void generateEdge(Face* face, bool meshEdge);   //bool值表示是否在构建Mesh的边
     void computeParameter();        //计算最长边、最短边和最小夹角
     void generateDM();              //对每条边生成Ce
-    void handleNonFlippableNLDEdge(Edge* edge);
+    void handleNonFlippableNLDEdge1(Edge* edge);
+    void handleNonFlippableNLDEdge2(Edge* edge);
     bool isNLD(Edge* edge);         //判断是否是NLD边
     void findAllNLDEdges();
     void flipAllNLDEdgeInFace(Face* face);
     void flipEdge(Edge* edge);
+    Face* getParentFace(Edge* edge, Face* childFace);
+    Vertex* generateNewVertex(glm::vec3&);
+    Face* generateNewFace(glm::vec3& normal, Vertex* v1, Vertex* v2, Vertex* v3);
+    void addNewNonNLDEdge(Face* face);
     glm::vec3 getAnotherVertexPositionByEdge(Face* face, Edge* edge);
-    int findVertexByPoint(glm::vec3 p);
+    int findVertexByPoint(glm::vec3& p);
 };
 
 
