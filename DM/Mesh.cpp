@@ -200,6 +200,7 @@ Vertex* getThirdVertexInFace(Face* face, int v1, int v2) {
             return (*it);
         }
     }
+    return nullptr;
 }
 
 Mesh::Mesh() {
@@ -437,6 +438,12 @@ bool Mesh::saveSTLBinary(const char * fileName) {
 
     //FILE *fp = fopen(saveName, "wb");
     //delete[]savename;
+    int count = 0;
+    for (int i = 0; i < faceNum; i++) {
+        for (auto it = faces[i]->children.begin(); it != faces[i]->children.end(); it++) {
+            count++;
+        }
+    }
     FILE* fp = nullptr;
     int err = fopen_s(&fp, fileName, "wb");
     if (fp == nullptr) {
@@ -448,10 +455,29 @@ bool Mesh::saveSTLBinary(const char * fileName) {
     float *data = new float[12];
 
     fwrite(partName, sizeof(char), 80, fp);
-    fwrite(&faceNum, sizeof(int), 1, fp);
+    //fwrite(&faceNum, sizeof(int), 1, fp);
+    fwrite(&count, sizeof(int), 1, fp);
 
     for (int i = 0; i < faceNum; i++) {
-        data[0] = faces[i]->normal.x;
+        for (auto it = faces[i]->children.begin(); it != faces[i]->children.end(); it++) {
+            data[0] = (*it)->normal.x;
+            data[1] = (*it)->normal.y;
+            data[2] = (*it)->normal.z;
+
+            data[3] = (*it)->vertexs[0]->position.x;
+            data[4] = (*it)->vertexs[0]->position.y;
+            data[5] = (*it)->vertexs[0]->position.z;
+            data[6] = (*it)->vertexs[1]->position.x;
+            data[7] = (*it)->vertexs[1]->position.y;
+            data[8] = (*it)->vertexs[1]->position.z;
+            data[9] = (*it)->vertexs[2]->position.x;
+            data[10] = (*it)->vertexs[2]->position.y;
+            data[11] = (*it)->vertexs[2]->position.z;
+
+            fwrite(data, sizeof(float), 12, fp);
+            fwrite((*it)->buf, sizeof(char), 2, fp);
+        }
+/*        data[0] = faces[i]->normal.x;
         data[1] = faces[i]->normal.y;
         data[2] = faces[i]->normal.z;
 
@@ -468,6 +494,7 @@ bool Mesh::saveSTLBinary(const char * fileName) {
         fwrite(data, sizeof(float), 12, fp);
         fwrite(faces[i]->buf, sizeof(char), 2, fp);
 
+*/
     }
 
     fclose(fp);
@@ -680,10 +707,11 @@ void Mesh::generateDM(){
    while (!NLDEdges.empty()) {
         Edge* currentEdge = NLDEdges.top();
         NLDEdges.pop();
-        currentEdge->inStack = false;
         if (currentEdge->flippable == false) {
             handleNonFlippableNLDEdge2(currentEdge);
         }
+        currentEdge->inStack = false;
+
 
     }
  }
@@ -990,14 +1018,19 @@ void Mesh::handleNonFlippableNLDEdge1(Edge* edge){
 
 }
 
-void Mesh::handleNonFlippableNLDEdge2(Edge* edge) {
+void Mesh::handleNonFlippableNLDEdge2(Edge* edge) {//edge就是edgeAB
+    if (edge->edgeId == 0x0000121b) {
+        printf(" ");
+    }
     Vertex* vertexA = edge->vertexe1;
     Vertex* vertexB = edge->vertexe2;
     Face* faceABD = faces[*(edge->faceId.begin())];
     Face* faceABC = faces[*(++edge->faceId.begin())];
     //以faceABD为基准平面，找到faceABC顶点旋转后的位置v',以此来构建外接圆与Is
-    Vertex* vertexC = getThirdVertexInFace(faceABC, vertexA->vertexId, vertexB->vertexId);
-    Vertex* vertexD = getThirdVertexInFace(faceABD, vertexA->vertexId, vertexB->vertexId);
+    Vertex* vertexC = nullptr; 
+    vertexC = getThirdVertexInFace(faceABC, vertexA->vertexId, vertexB->vertexId);
+    Vertex* vertexD = nullptr;
+    vertexD = getThirdVertexInFace(faceABD, vertexA->vertexId, vertexB->vertexId);
 
     glm::vec3 normalABD = faceABD->normal;
     glm::vec3 normalABC = faceABC->normal;
@@ -1014,8 +1047,7 @@ void Mesh::handleNonFlippableNLDEdge2(Edge* edge) {
             }
         }
     }
-    glm::vec4 vertexEPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABC, edgeAC), 1);
-    glm::vec4 vertexFPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABC, edgeBC), 1);
+    
  
     float cosAngle = glm::dot(normalABD, normalABC);   //都是单位向量
     float angle = acos(cosAngle);                   //旋转的弧度
@@ -1030,40 +1062,82 @@ void Mesh::handleNonFlippableNLDEdge2(Edge* edge) {
     glm::mat4 moveBack = glm::mat4(1.0f);
     moveBack = glm::translate(moveBack, vertexB->position);
 
-    //不只是旋转对角，还要把相关的另两个三角面的对角也旋转了
+    //旋转对角
     glm::vec4 newVertexCPosition = moveBack * trans * moveTo * vertexCPosition;
-    glm::vec4 newVertexEPosition = moveBack * trans * moveTo * vertexEPosition;
-    glm::vec4 newVertexFPosition = moveBack * trans * moveTo * vertexFPosition;
-
-    //再旋转另外两个三角面到达在同一平面
-    glm::vec3 newVertexEPos = glm::vec3(newVertexEPosition);
     glm::vec3 newVertexCPos = glm::vec3(newVertexCPosition);
-    glm::vec3 normalACE = calNormal(vertexA->position, newVertexCPos, newVertexEPos);
-    float cosAngleE = glm::dot(normalABD, normalACE);   //都是单位向量
-    float angleE = acos(cosAngleE);                   //旋转的弧度
-    glm::vec3 newAC = glm::normalize(newVertexCPos - vertexA->position); //该边的向量
-    trans = glm::mat4(1.0f);              //创建单位矩阵
-    trans = glm::rotate(trans, angleE, newAC);          //旋转矩阵
-    moveTo = glm::mat4(1.0f);
-    moveTo = glm::translate(moveTo, -vertexA->position);
-    moveBack = glm::mat4(1.0f);
-    moveBack = glm::translate(moveBack, vertexA->position);
-    newVertexEPosition = moveBack * trans * moveTo * newVertexEPosition;
-    newVertexEPos = glm::vec3(newVertexEPosition);
 
-    glm::vec3 newVertexFPos = glm::vec3(newVertexFPosition);
-    glm::vec3 normalBCF = calNormal(vertexB->position, newVertexCPos, newVertexEPos);
-    float cosAngleF = glm::dot(normalABD, normalBCF);   //都是单位向量
-    float angleF = acos(cosAngleF);                   //旋转的弧度
-    glm::vec3 newBC = glm::normalize(newVertexCPos - vertexB->position); //该边的向量
-    trans = glm::mat4(1.0f);              //创建单位矩阵
-    trans = glm::rotate(trans, -angleF, newBC);          //旋转矩阵
-    moveTo = glm::mat4(1.0f);
-    moveTo = glm::translate(moveTo, -vertexB->position);
-    moveBack = glm::mat4(1.0f);
-    moveBack = glm::translate(moveBack, vertexB->position);
-    newVertexFPosition = moveBack * trans * moveTo * newVertexFPosition;
-    newVertexFPos = glm::vec3(newVertexFPosition);
+    Edge* parent = edge->parent;
+    Vertex* pStart = parent->vertexe1;
+    Vertex* pEnd = parent->vertexe2;
+
+    glm::vec3 center = solveCenterPointOfCircle(vertexA->position, vertexD->position, newVertexCPos);
+    float tEnd = getAnotherPoint(vertexB->position, vertexA->position, center);
+    center = solveCenterPointOfCircle(vertexB->position, vertexD->position, newVertexCPos);
+    float tStart = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
+
+    if (tEnd > 1) {
+        tEnd = 1;
+    }
+    if (tStart < 0) {
+        tStart = 0;
+    }
+
+    float tE = 0;
+    //还要把相关的另两个三角面的对角也旋转了
+    if (edgeAC->faceId.size() == 2) {
+        glm::vec4 vertexEPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABC, edgeAC), 1);
+        glm::vec4 newVertexEPosition = moveBack * trans * moveTo * vertexEPosition;
+        
+        //再旋转另外两个三角面到达在同一平面
+        glm::vec3 newVertexEPos = glm::vec3(newVertexEPosition);
+        glm::vec3 normalACE = calNormal(vertexA->position, newVertexCPos, newVertexEPos);
+        float cosAngleE = glm::dot(normalABD, normalACE);   //都是单位向量
+        float angleE = acos(cosAngleE);                   //旋转的弧度
+        glm::vec3 newAC = glm::normalize(newVertexCPos - vertexA->position); //该边的向量
+        trans = glm::mat4(1.0f);              //创建单位矩阵
+        trans = glm::rotate(trans, angleE, newAC);          //旋转矩阵
+        moveTo = glm::mat4(1.0f);
+        moveTo = glm::translate(moveTo, -vertexA->position);
+        moveBack = glm::mat4(1.0f);
+        moveBack = glm::translate(moveBack, vertexA->position);
+        newVertexEPosition = moveBack * trans * moveTo * newVertexEPosition;
+        newVertexEPos = glm::vec3(newVertexEPosition);
+
+        center = solveCenterPointOfCircle(vertexA->position, newVertexEPos, newVertexCPos);
+        tE = getAnotherPoint(vertexB->position, vertexA->position, center);
+    }
+    else {
+        tE = 0;
+    }
+
+    float tF = 1;
+    if (edgeBC->faceId.size() == 2) {
+        glm::vec4 vertexFPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABC, edgeBC), 1);
+        glm::vec4 newVertexFPosition = moveBack * trans * moveTo * vertexFPosition;
+
+        //再旋转另外两个三角面到达在同一平面
+        glm::vec3 newVertexFPos = glm::vec3(newVertexFPosition);
+        glm::vec3 normalBCF = calNormal(vertexB->position, newVertexCPos, newVertexFPos);
+        float cosAngleF = glm::dot(normalABD, normalBCF);   //都是单位向量
+        float angleF = acos(cosAngleF);                   //旋转的弧度
+        glm::vec3 newBC = glm::normalize(newVertexCPos - vertexB->position); //该边的向量
+        trans = glm::mat4(1.0f);              //创建单位矩阵
+        trans = glm::rotate(trans, -angleF, newBC);          //旋转矩阵
+        moveTo = glm::mat4(1.0f);
+        moveTo = glm::translate(moveTo, -vertexB->position);
+        moveBack = glm::mat4(1.0f);
+        moveBack = glm::translate(moveBack, vertexB->position);
+        newVertexFPosition = moveBack * trans * moveTo * newVertexFPosition;
+        newVertexFPos = glm::vec3(newVertexFPosition);
+
+        center = solveCenterPointOfCircle(vertexB->position, newVertexCPos, newVertexFPos);
+        tF = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
+
+    }
+    else {
+        tF = 1;
+    }
+   
 
     //再旋转与ABD相邻的两个三角面到达在同一平面
 
@@ -1079,64 +1153,58 @@ void Mesh::handleNonFlippableNLDEdge2(Edge* edge) {
         }
     }
     //求另两个三角面的顶点
-    glm::vec4 vertexHPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABD, edgeAD), 1);
-    glm::vec4 vertexGPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABD, edgeBD), 1);
-    glm::vec3 vertexHPos = glm::vec3(vertexHPosition);
+    float tH = 0;
+    if (edgeAD->faceId.size() == 2) {
+        glm::vec4 vertexHPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABD, edgeAD), 1);
+        glm::vec3 vertexHPos = glm::vec3(vertexHPosition);
 
-    glm::vec3 normalADH = calNormal(vertexA->position, vertexD->position, vertexHPos);
-    float cosAngleH = glm::dot(normalABD, normalADH);   //都是单位向量
-    float angleH = acos(cosAngleH);                   //旋转的弧度
-    glm::vec3 newAD = glm::normalize(vertexD->position - vertexA->position); //该边的向量
-    trans = glm::mat4(1.0f);              //创建单位矩阵
-    trans = glm::rotate(trans, -angleH, newAD);          //旋转矩阵
-    moveTo = glm::mat4(1.0f);
-    moveTo = glm::translate(moveTo, -vertexA->position);
-    moveBack = glm::mat4(1.0f);
-    moveBack = glm::translate(moveBack, vertexA->position);
-    vertexHPosition = moveBack * trans * moveTo * vertexHPosition;
-    vertexHPos = glm::vec3(vertexHPosition);
+        glm::vec3 normalADH = calNormal(vertexA->position, vertexD->position, vertexHPos);
+        float cosAngleH = glm::dot(normalABD, normalADH);   //都是单位向量
+        float angleH = acos(cosAngleH);                   //旋转的弧度
+        glm::vec3 newAD = glm::normalize(vertexD->position - vertexA->position); //该边的向量
+        trans = glm::mat4(1.0f);              //创建单位矩阵
+        trans = glm::rotate(trans, -angleH, newAD);          //旋转矩阵
+        moveTo = glm::mat4(1.0f);
+        moveTo = glm::translate(moveTo, -vertexA->position);
+        moveBack = glm::mat4(1.0f);
+        moveBack = glm::translate(moveBack, vertexA->position);
+        vertexHPosition = moveBack * trans * moveTo * vertexHPosition;
+        vertexHPos = glm::vec3(vertexHPosition);
 
-    glm::vec3 vertexGPos = glm::vec3(vertexGPosition);
-    glm::vec3 normalBDG = calNormal(vertexB->position, vertexGPos, vertexD->position);
-    float cosAngleG = glm::dot(normalABD, normalBDG);   //都是单位向量
-    float angleG = acos(cosAngleG);                   //旋转的弧度
-    glm::vec3 newBD = glm::normalize(vertexD->position - vertexB->position); //该边的向量
-    trans = glm::mat4(1.0f);              //创建单位矩阵
-    trans = glm::rotate(trans, -angleG, newBC);          //旋转矩阵
-    moveTo = glm::mat4(1.0f);
-    moveTo = glm::translate(moveTo, -vertexB->position);
-    moveBack = glm::mat4(1.0f);
-    moveBack = glm::translate(moveBack, vertexB->position);
-    vertexGPosition = moveBack * trans * moveTo * vertexGPosition;
-    vertexGPos = glm::vec3(vertexGPosition);
+        center = solveCenterPointOfCircle(vertexA->position, vertexD->position, vertexHPos);
+        tH = getAnotherPoint(vertexB->position, vertexA->position, center);
+    }
+    else {
+        tH = 0;
+    }
 
-    Edge* parent = edge->parent;
-    Vertex* pStart = parent->vertexe1;
-    Vertex* pEnd = parent->vertexe2;
+    float tG = 1;
+    if (edgeBD->faceId.size() == 2) {
+        glm::vec4 vertexGPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABD, edgeBD), 1);
+
+        glm::vec3 vertexGPos = glm::vec3(vertexGPosition);
+        glm::vec3 normalBDG = calNormal(vertexB->position, vertexGPos, vertexD->position);
+        float cosAngleG = glm::dot(normalABD, normalBDG);   //都是单位向量
+        float angleG = acos(cosAngleG);                   //旋转的弧度
+        glm::vec3 newBD = glm::normalize(vertexD->position - vertexB->position); //该边的向量
+        trans = glm::mat4(1.0f);              //创建单位矩阵
+        trans = glm::rotate(trans, -angleG, newBD);          //旋转矩阵
+        moveTo = glm::mat4(1.0f);
+        moveTo = glm::translate(moveTo, -vertexB->position);
+        moveBack = glm::mat4(1.0f);
+        moveBack = glm::translate(moveBack, vertexB->position);
+        vertexGPosition = moveBack * trans * moveTo * vertexGPosition;
+        vertexGPos = glm::vec3(vertexGPosition);
+
+        center = solveCenterPointOfCircle(vertexB->position, vertexD->position, vertexGPos);
+        tG = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
+    }
+    else {
+        tG = 1;
+    }
     
-    glm::vec3 center = solveCenterPointOfCircle(vertexA->position, vertexD->position, newVertexCPos);
-    float tEnd = getAnotherPoint(vertexB->position, vertexA->position, center);
-    center = solveCenterPointOfCircle(vertexB->position, vertexD->position, newVertexCPos);
-    float tStart = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
 
-    if (tEnd > 1) {
-        tEnd = 1;
-    }
-    if (tStart < 0) {
-        tStart = 0;
-    }
-
-    center = solveCenterPointOfCircle(vertexA->position, newVertexEPos, newVertexCPos);
-    float tE = getAnotherPoint(vertexB->position, vertexA->position, center);
-
-    center = solveCenterPointOfCircle(vertexA->position, vertexD->position, vertexHPos);
-    float tH = getAnotherPoint(vertexB->position, vertexA->position, center);
-
-    center = solveCenterPointOfCircle(vertexB->position, newVertexCPos, newVertexFPos);
-    float tF = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
-
-    center = solveCenterPointOfCircle(vertexB->position, vertexD->position, vertexGPos);
-    float tG = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
+   
 
     std::pair<float, float> tRegion = getSplitRegion(tStart, tEnd, tE, tH, tF, tG);//相对于AB而言
     glm::vec3 p1 = glm::vec3(vertexA->position.x + tRegion.first * (vertexB->position.x - vertexA->position.x), vertexA->position.y + tRegion.first * (vertexB->position.y - vertexA->position.y), vertexA->position.z + tRegion.first * (vertexB->position.z - vertexA->position.z));
@@ -1225,8 +1293,8 @@ void Mesh::handleNonFlippableNLDEdge2(Edge* edge) {
 bool Mesh::isNLD(Edge* edge){
     edge->flippable = false;
     if (edge->faceId.size() != 2) {
+        printf("edge with face not equal to 2: %d\n", edge->edgeId);
         return false;
-        printf("edge with face not equal to 2:" + edge->edgeId);
     }
     else {
         Face* face1 = faces[*(edge->faceId.begin())];
@@ -1271,9 +1339,12 @@ bool Mesh::isNLD(Edge* edge){
 
 void Mesh::findAllNLDEdges(){
     for (auto it = edges.begin(); it != edges.end(); it++) {
-        if (isNLD(*it)) {
-            NLDEdges.push(*it);
+        if ((*it)->faceId.size() != 2) {
+            continue;
+        }
+        else if ((*it)->inStack == false && isNLD(*it)) {
             (*it)->inStack = true;
+            NLDEdges.push(*it);
         }
     }
 }
@@ -1341,8 +1412,10 @@ void Mesh::flipEdge(Edge* edgeAB){
         }
     }
 
-    Face* faceACD = generateNewFace(faceABC->normal, vertexA, vertexD, vertexC);
-    Face* faceBCD = generateNewFace(faceABC->normal, vertexC, vertexD, vertexB);
+    Face* faceACD = nullptr;
+    faceACD = generateNewFace(faceABC->normal, vertexA, vertexD, vertexC);
+    Face* faceBCD = nullptr;
+    faceBCD = generateNewFace(faceABC->normal, vertexC, vertexD, vertexB);
 
     auto iter = edgeAD->faceId.find(faceABD->faceId);
     edgeAD->faceId.erase(iter);
@@ -1421,8 +1494,9 @@ Face* Mesh::generateNewFace(glm::vec3& normal, Vertex* v1, Vertex* v2, Vertex* v
 void Mesh::addNewNonNLDEdge(Face* face){
     for (auto it = face->borders.begin(); it != face->borders.end(); it++) {
         if ((*it)->inStack == false && isNLD(*it)) {
+            (*it)->inStack = true;
             NLDEdges.push(*it);
-            (*it)->inStack == true;
+            
         }
     }
 }
@@ -1442,7 +1516,8 @@ glm::vec3 Mesh::getAnotherVertexPositionByEdge(Face* face, Edge* edge){
     }
     
     //求顶点
-    Vertex* vertexE = getThirdVertexInFace(faceACE, vertexA->vertexId, vertexC->vertexId);
+    Vertex* vertexE = nullptr;
+    vertexE = getThirdVertexInFace(faceACE, vertexA->vertexId, vertexC->vertexId);
     return glm::vec3(vertexE->position);
 }
 

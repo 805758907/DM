@@ -3,21 +3,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-glm::vec3 getAnotherPoint1(glm::vec3& v3, glm::vec3& v1, glm::vec3& center) {
-    float x31 = v3.x - v1.x;
-    float x21 = center.x - v1.x;
-    float y31 = v3.y - v1.y;
-    float y21 = center.y - v1.y;
-    float z31 = v3.z - v1.z;
-    float z21 = center.z - v1.z;
-
-
-    float t = 2 * (x31 * x21 + y31 * y21 + z31 * z21) / (x31 * x31 + y31 * y31 + z31 * z31);
-
-    return glm::vec3(v1.x + t * x31, v1.y + t * y31, v1.z + t * z31);
-    //return t;
-}
-
 int main() {
     Mesh mesh;
     mesh.readSTL("../file/test.stl");
