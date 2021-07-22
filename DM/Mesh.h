@@ -67,8 +67,7 @@ public:
     void generateEdge(Face* face, bool meshEdge);   //bool值表示是否在构建Mesh的边
     void computeParameter();        //计算最长边、最短边和最小夹角
     void generateDM();              //对每条边生成Ce
-    void handleNonFlippableNLDEdge1(Edge* edge);
-    void handleNonFlippableNLDEdge2(Edge* edge);
+    void handleNonFlippableNLDEdge(Edge* edge);
     bool isNLD(Edge* edge);         //判断是否是NLD边
     void findAllNLDEdges();
     void flipAllNLDEdgeInFace(Face* face);

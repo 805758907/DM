@@ -57,8 +57,8 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {
 	double part1 = len1 / length;	//v1和v2与起点距离在总长度的占比
 	double part2 = len2 / length;
 	
-	glm::vec3 normal = glm::normalize(vertexe2->position - vertexe1->position);
-
+	//glm::vec3 normal = glm::normalize(vertexe2->position - vertexe1->position);
+	glm::vec3 normal = vertexe2->position - vertexe1->position;
 	auto it = Ce.begin();
 	for (; it != Ce.end(); it++) {
 		if ((*it) >= part1) {
