@@ -493,8 +493,8 @@ bool Mesh::saveSTLBinary(const char * fileName) {
             count++;
         }
     }
-    printf("%d", faceNum);
-    printf("%d", count);
+    printf("origin: %d\n", faceNum);
+    printf("current: %d\n", count);
     FILE* fp = nullptr;
     int err = fopen_s(&fp, fileName, "wb");
     if (fp == nullptr) {
