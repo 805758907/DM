@@ -203,6 +203,31 @@ Vertex* getThirdVertexInFace(Face* face, int v1, int v2) {
     return nullptr;
 }
 
+int getIndexOfVertexInFace(Face* face, Vertex* v) {
+    for (int i = 0; i < 3; i++) {
+        if (face->vertexs[i]->vertexId == v->vertexId) {
+            return i;
+        }
+    }
+}
+
+bool judgeAntiClockWish(Face* face, Vertex* v1, Vertex* v2) {
+    int index1 = getIndexOfVertexInFace(face, v1);
+    int index2 = getIndexOfVertexInFace(face, v2);
+    
+    if (index1 < index2) {
+        if (index2 - index1 == 1)
+            return true;
+        return false;
+    }
+    else {
+        if (index1 - index2 == 1)
+            return false;
+        return true;
+    }
+
+}
+
 //旋转pointRotated：以normalFixed作为固定面的法向量，normalRotated为要旋转平面的法向量，edgeNormal作为交线的法向量，startPosition作为交线的起始点
 glm::vec3 rotatePoint(glm::vec3& normalFixed, glm::vec3& normalRotated, glm::vec3& edgeNormal, glm::vec3& startPosition, glm::vec3& pointRotated){
     float cosAngle = glm::dot(normalFixed, normalRotated);   //都是单位向量
@@ -924,11 +949,27 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
     glm::vec3 t1 = glm::normalize(parentEdge->vertexe1->position - splitPosition);
     glm::vec3 t2 = glm::normalize(splitPosition - parentEdge->vertexe2->position);
+
+    bool antiClockWish = judgeAntiClockWish(faceABC, vertexA, vertexB);
+    Face* faceACS = nullptr;
+    Face* faceBCS = nullptr;
+    Face* faceADS = nullptr;
+    Face* faceBDS = nullptr;
+
     //添加四个面
-    Face* faceACS = generateNewFace(faceABC->normal, vertexA, vertexC, vertexS);
-    Face* faceBCS = generateNewFace(faceABC->normal, vertexB, vertexS, vertexC);
-    Face* faceADS = generateNewFace(faceABD->normal, vertexA, vertexS, vertexD);
-    Face* faceBDS = generateNewFace(faceABD->normal, vertexB, vertexD, vertexS);
+    if (antiClockWish) {    //A、B是逆时针
+        faceACS = generateNewFace(faceABC->normal, vertexA, vertexS, vertexC);
+        faceBCS = generateNewFace(faceABC->normal, vertexS, vertexB, vertexC);
+        faceADS = generateNewFace(faceABD->normal, vertexS, vertexA, vertexD);
+        faceBDS = generateNewFace(faceABD->normal, vertexB, vertexS, vertexD);
+    }
+    else {
+        faceACS = generateNewFace(faceABC->normal, vertexS, vertexA, vertexC);
+        faceBCS = generateNewFace(faceABC->normal, vertexB, vertexS, vertexC);
+        faceADS = generateNewFace(faceABD->normal, vertexA, vertexS, vertexD);
+        faceBDS = generateNewFace(faceABD->normal, vertexS, vertexB, vertexD);
+    }
+    
 
     parentFaceOfABC->deleteChild(faceABC);
 /*    for (auto faceIt = faces.rbegin(); faceIt != faces.rend(); faceIt++) {
@@ -1121,6 +1162,23 @@ void Mesh::flipEdge(Edge* edgeAB){
     faceACD = generateNewFace(faceABC->normal, vertexA, vertexD, vertexC);
     Face* faceBCD = nullptr;
     faceBCD = generateNewFace(faceABC->normal, vertexC, vertexD, vertexB);
+
+    Edge* parentEdge = edgeAB->parent;
+
+    Face* parentFaceOfABC = getParentFace(parentEdge, faceABC);
+    Face* parentFaceOfABD = getParentFace(parentEdge, faceABD);
+
+    if (parentFaceOfABC->faceId == parentFaceOfABD->faceId) {
+        parentFaceOfABC->deleteChild(faceABC);
+        parentFaceOfABC->deleteChild(faceABD);
+        parentFaceOfABC->children.push_back(faceACD);
+        parentFaceOfABC->children.push_back(faceBCD);
+    }
+    else {
+//        parentFaceOfABC
+    }
+
+
 
     auto iter = edgeAD->faceId.find(faceABD->faceId);
     edgeAD->faceId.erase(iter);
