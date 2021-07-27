@@ -4,6 +4,7 @@
 #include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "time.h"//统计时间需添加的头文件
 #include "Mesh.h"
 
 //计算单位法向量，v1、v2、v3三点逆时针排布
@@ -344,7 +345,7 @@ bool Mesh::readSTLASCII(const char *fileName) {
 
             face->setId(faceId);
             face->setVertex(vs);
-            generateEdge(face, true);
+            generateEdgeOfFace(face, true);
 
             face->children.push_back(face);
             faces.push_back(face);
@@ -353,8 +354,6 @@ bool Mesh::readSTLASCII(const char *fileName) {
         }
         
     }
-    
-    computeParameter();
     return true;
 }
 
@@ -378,6 +377,8 @@ bool Mesh::readSTLBinary(const char* fileName) {
     int faceId = 0;
     float v1, v2, v3;
     char buf[2] = {};
+    clock_t start, finish;
+    double duration;
     for (int i = 0; i < faceNum; i++) {
         Face* face = new Face();
         fread(&v1, 4, 1, fStl);//读取法线数据
@@ -407,17 +408,21 @@ bool Mesh::readSTLBinary(const char* fileName) {
             }
 */
         }
-
+//        start = clock();
         fread(face->buf, 2, 1, fStl);//读取保留项数据，这一项一般没什么用，这里选择读取是为了移动文件指针
         face->setId(faceId);
         face->setVertex(vs);
         face->children.push_back(face);
-        generateEdge(face,true);
+        generateEdgeOfFace(face,true);
 
-
+//        finish = clock();
+ //       duration = (double)(finish - start) / CLOCKS_PER_SEC;
+//        printf("%f seconds of 2\n", duration);
+//        printf("%d faceIndex\n", i);
         faces.push_back(face);
         faceId++;
     }
+    
     return true;
 
 }
@@ -566,152 +571,84 @@ int Mesh::findVertexByPoint(glm::vec3& p) {
     }
 }
 
-void Mesh::generateEdge(Face* face, bool meshEdge){
-    Edge* edge1 = new Edge();
-    Edge* edge2 = new Edge();
-    Edge* edge3 = new Edge();
-    double length01;
-    double length12;
-    double length02;
-    //std::sort(edges.begin(), edges.end(), compare);
-    if (face->vertexs[0]->vertexId < face->vertexs[1]->vertexId) {
-        edge1->vertexe1 = face->vertexs[0];
-        edge1->vertexe2 = face->vertexs[1];
+Edge* Mesh::findEdgeByPoints(Vertex* v1, Vertex* v2) {
+    std::pair<int, int> p(v1->vertexId, v2->vertexId);
+    auto it = m_hash_edge.find(p);
+    if (it != m_hash_edge.end()) {
+        return it->second;
     }
     else {
-        edge1->vertexe1 = face->vertexs[1];
-        edge1->vertexe2 = face->vertexs[0];
+        return nullptr;
     }
-    auto it = edges.begin();
-    for (; it != edges.end(); it++) {   //第一个大于或等于查找值的迭代器
-        if (!compare(*it, edge1)) {
-            break;
-        }
-    }
-    if (!(it == edges.end()) && ((*it)->vertexe1->vertexId == edge1->vertexe1->vertexId)
-        && ((*it)->vertexe2->vertexId == edge1->vertexe2->vertexId)) {     //已存在的edge
-        length01 = (*it)->length;
-        (*it)->faceId.insert(face->faceId);
-        if (meshEdge) {
-            (*it)->meshFaceId.insert(face->faceId);
-        }
-        edge1 = (*it);
-    }
-    else {
-        
-        length01 = sqrt(pow((edge1->vertexe1->position.x - edge1->vertexe2->position.x), 2)
-            + pow((edge1->vertexe1->position.y - edge1->vertexe2->position.y), 2) + pow((edge1->vertexe1->position.z - edge1->vertexe2->position.z), 2));
-        if (length01 > lMax) {
-            lMax = length01;
-        }
-        if (length01 < lMin) {
-            lMin = length01;
-        }
-        edge1->length = length01;
-        edge1->edgeId = edges.size();
-        edge1->faceId.insert(face->faceId);
-        if (meshEdge) {
-            edge1->meshFaceId.insert(face->faceId);
-        }
-        edge1->parent = edge1;
-        edges.insert(it, edge1);
-    }
-    face->edges.push_back(edge1);
-    face->borders.push_back(edge1);
+}
+
+Edge* Mesh::generateEdge(Vertex* v1, Vertex* v2){
+    Vertex* pFirst, * pSecond;
     
-
-    if (face->vertexs[1]->vertexId < face->vertexs[2]->vertexId) {
-        edge2->vertexe1 = face->vertexs[1];
-        edge2->vertexe2 = face->vertexs[2];
+    if (v1->vertexId < v2->vertexId) {
+        pFirst = v1;
+        pSecond = v2;
     }
     else {
-        edge2->vertexe1 = face->vertexs[2];
-        edge2->vertexe2 = face->vertexs[1];
+        pFirst = v2;
+        pSecond = v1;
     }
-    it = edges.begin(); //第一个大于或等于查找值的迭代器
-    for (; it != edges.end(); it++) {   //第一个大于或等于查找值的迭代器
-        if (!compare(*it, edge2)) {
-            break;
+    Edge* edge = findEdgeByPoints(pFirst, pSecond);
+    if (edge == nullptr) {			//没找到，该edge是新的
+        edge = new Edge();
+        edge->vertexe1 = pFirst;
+        edge->vertexe2 = pSecond;
+        edge->length = sqrt(pow((edge->vertexe1->position.x - edge->vertexe2->position.x), 2)
+            + pow((edge->vertexe1->position.y - edge->vertexe2->position.y), 2) + pow((edge->vertexe1->position.z - edge->vertexe2->position.z), 2));
+        if (edge->length > lMax) {
+            lMax = edge->length;
         }
+        if (edge->length < lMin) {
+            lMin = edge->length;
+        }
+        edge->edgeId = edges.size();
+        edge->parent = edge;
+        std::pair<int, int> pair1(pFirst->vertexId, pSecond->vertexId);
+        m_hash_edge[pair1] = edge;
+        edges.push_back(edge);
     }
-    if (!(it == edges.end()) && ((*it)->vertexe1->vertexId == edge2->vertexe1->vertexId)
-        && ((*it)->vertexe2->vertexId == edge2->vertexe2->vertexId)) {     //已存在的edge
-        length12 = (*it)->length;
-        edge2 = (*it);
-        (*it)->faceId.insert(face->faceId);
-        if (meshEdge) {
-            (*it)->meshFaceId.insert(face->faceId);
-        }
-    }
-    else {
-        length12 = sqrt(pow((edge2->vertexe1->position.x - edge2->vertexe2->position.x), 2)
-            + pow((edge2->vertexe1->position.y - edge2->vertexe2->position.y), 2) + pow((edge2->vertexe1->position.z - edge2->vertexe2->position.z), 2));
-        if (length12 > lMax) {
-            lMax = length12;
-        }
-        if (length12 < lMin) {
-            lMin = length12;
-        }
-        edge2->length = length12;
-        edge2->edgeId = edges.size();
-        edge2->faceId.insert(face->faceId);
-        if (meshEdge) {
-            edge2->meshFaceId.insert(face->faceId);
-        }
-        edge2->parent = edge2;
-        edges.insert(it, edge2);
+    return edge;
+}
 
+void Mesh::generateEdgeOfFace(Face* face, bool meshEdge){
+    clock_t start, finish;
+    double duration;
+    start = clock();
+   
+    Edge* edge01 = generateEdge(face->vertexs[0], face->vertexs[1]);
+    edge01->faceId.insert(face->faceId);
+    if (meshEdge) {
+        edge01->meshFaceId.insert(face->faceId);
     }
-    face->edges.push_back(edge2);
-    face->borders.push_back(edge2);
+    face->edges.push_back(edge01);
+    face->borders.push_back(edge01);
+    double length01 = edge01->length;
 
-    if (face->vertexs[0]->vertexId < face->vertexs[2]->vertexId) {
-        edge3->vertexe1 = face->vertexs[0];
-        edge3->vertexe2 = face->vertexs[2];
+    Edge* edge12 = generateEdge(face->vertexs[1], face->vertexs[2]);
+    edge12->faceId.insert(face->faceId);
+    if (meshEdge) {
+        edge12->meshFaceId.insert(face->faceId);
     }
-    else {
-        edge3->vertexe1 = face->vertexs[2];
-        edge3->vertexe2 = face->vertexs[0];
-    }
-    it = edges.begin(); //第一个大于或等于查找值的迭代器
-    for (; it != edges.end(); it++) {   //第一个大于或等于查找值的迭代器
-        if (!compare(*it, edge3)) {
-            break;
-        }
-    }
-    if (!(it == edges.end()) && ((*it)->vertexe1->vertexId == edge3->vertexe1->vertexId)
-        && ((*it)->vertexe2->vertexId == edge3->vertexe2->vertexId)) {     //已存在的edge
-        length02 = (*it)->length;
-        (*it)->faceId.insert(face->faceId);
-        if (meshEdge) {
-            (*it)->meshFaceId.insert(face->faceId);
-        }
-        edge3 = (*it);
-    }
-    else {
-        length02 = sqrt(pow((edge3->vertexe1->position.x - edge3->vertexe2->position.x), 2)
-            + pow((edge3->vertexe1->position.y - edge3->vertexe2->position.y), 2) + pow((edge3->vertexe1->position.z - edge3->vertexe2->position.z), 2));
-        if (length02 > lMax) {
-            lMax = length02;
-        }
-        if (length02 < lMin) {
-            lMin = length02;
-        }
-        edge3->length = length02;
-        edge3->edgeId = edges.size();
-        edge3->faceId.insert(face->faceId);
-        if (meshEdge) {
-            edge3->meshFaceId.insert(face->faceId);
-        }
-        edge3->parent = edge3;
-        edges.insert(it, edge3);
+    face->edges.push_back(edge12);
+    face->borders.push_back(edge12);
+    double length12 = edge12->length;
 
+    Edge* edge02 = generateEdge(face->vertexs[0], face->vertexs[2]);
+    edge02->faceId.insert(face->faceId);
+    if (meshEdge) {
+        edge02->meshFaceId.insert(face->faceId);
     }
-    face->edges.push_back(edge3);
-    face->borders.push_back(edge3);
+    face->edges.push_back(edge02);
+    face->borders.push_back(edge02);
+    double length02 = edge02->length;
     
     //求角度
-    
+//    start = clock();
     double cosTheta0 = glm::dot((face->vertexs[1]->position - face->vertexs[0]->position), (face->vertexs[2]->position - face->vertexs[0]->position)) / length01 / length02;
     double sinTheta0 = sqrt(1 - cosTheta0 * cosTheta0);
     if (sinTheta0 < sinThetaMin) {
@@ -729,11 +666,10 @@ void Mesh::generateEdge(Face* face, bool meshEdge){
     if (sinTheta2 < sinThetaMin) {
         sinThetaMin = sinTheta2;
     }
+    if (sinThetaMin < 0.0001) {
+        printf("small!!!");
+    }
     face->angles.push_back(cosTheta2);
-    //if (sinThetaMin < 0.001) {
-        //printf("11");
-    // }
-    
     
 }
 
@@ -1235,6 +1171,7 @@ Vertex* Mesh::generateNewVertex(glm::vec3& position){
     return vertex;
 }
 
+
 Face* Mesh::generateNewFace(glm::vec3& normal, Vertex* v1, Vertex* v2, Vertex* v3){
     Face* face = new Face();
 
@@ -1249,7 +1186,7 @@ Face* Mesh::generateNewFace(glm::vec3& normal, Vertex* v1, Vertex* v2, Vertex* v
     face->isMesh = false;
     faces.push_back(face);
 
-    generateEdge(face, false);
+    generateEdgeOfFace(face, false);
 
     return face;
 }

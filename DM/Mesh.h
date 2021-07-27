@@ -38,6 +38,13 @@ public:
 	}
 };
 
+class hash_edge {
+public:
+    size_t operator()(const std::pair<int, int> &p) const {
+        return hash_val(p.first, p.second);
+    }
+};
+
 
 class Mesh {
 public:
@@ -54,6 +61,7 @@ public:
     std::stack<Edge*> NLDEdges;
 
     std::unordered_map<glm::vec3, int, hash_point>	m_hash_point;
+    std::unordered_map<std::pair<int, int>, Edge*, hash_edge>	m_hash_edge;
 
 public:
     Mesh();
@@ -64,7 +72,8 @@ public:
     bool saveSTLBinary(const char * fileName);
     bool saveSTLASCII(const char * fileName);
 
-    void generateEdge(Face* face, bool meshEdge);   //bool值表示是否在构建Mesh的边
+    Edge* generateEdge(Vertex* v1, Vertex* v2);
+    void generateEdgeOfFace(Face* face, bool meshEdge);   //bool值表示是否在构建Mesh的边
     void computeParameter();        //计算最长边、最短边和最小夹角
     void generateDM();              //对每条边生成Ce
     void handleNonFlippableNLDEdge(Edge* edge);
@@ -77,6 +86,8 @@ public:
     Face* generateNewFace(glm::vec3& normal, Vertex* v1, Vertex* v2, Vertex* v3);
     void addNewNonNLDEdge(Face* face);
     glm::vec3 getAnotherVertexPositionByEdge(Face* face, Edge* edge);
+
+    Edge* findEdgeByPoints(Vertex* v1, Vertex* v2);
     int findVertexByPoint(glm::vec3& p);
 };
 

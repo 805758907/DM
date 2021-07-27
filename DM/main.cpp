@@ -6,7 +6,7 @@
 
 int main() {
     Mesh mesh;
-    mesh.readSTL("../file/test.stl");
+    mesh.readSTL("../file/c919.STL");
     mesh.generateDM();
     mesh.saveSTLBinary("./test.stl");
 //    mesh.saveSTLASCII("./test.stl");
