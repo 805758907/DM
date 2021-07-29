@@ -7,9 +7,6 @@
 
 class Edge
 {
-	float edgeError = 0;
-	glm::mat4 edgeQ;
-	glm::vec3 newPos;
 	//std::list<glm::vec3> Ce;
 	std::list<float> Ce;	//每一个Ce点在线段上的位置（以V1为起点）
 
@@ -23,6 +20,7 @@ public:
 	Vertex* vertexe1;
 	Vertex* vertexe2;
 	int edgeId;
+	bool deleted = false;
 	Edge();
 	~Edge();
 	void constructCe(double rhoV, double rhoE);

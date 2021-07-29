@@ -14,6 +14,7 @@ public:
     std::list<Face*> children;      //Mesh的面只包含其他face，非Mesh的面只包含自己
     bool isMesh = true;
     std::list<Edge*> borders;       //Mesh的面的边界线（可能是原来的边拆成了几段）
+    bool deleted = false;
 public:
     Face();
     void setNormal(float i, float j, float k);

@@ -59,6 +59,7 @@ public:
     std::list<Edge*> edges;
     std::vector<Vertex*> vertexes;
     std::stack<Edge*> NLDEdges;
+    int edgeIndex = 0;
 
     std::unordered_map<glm::vec3, int, hash_point>	m_hash_point;
     std::unordered_map<std::pair<int, int>, Edge*, hash_edge>	m_hash_edge;
@@ -83,9 +84,11 @@ public:
     void flipEdge(Edge* edge);
     Face* getParentFace(Edge* edge, Face* childFace);
     Vertex* generateNewVertex(glm::vec3&);
-    Face* generateNewFace(glm::vec3& normal, Vertex* v1, Vertex* v2, Vertex* v3);
+    Face* generateNewFace(Face* parentFace, Vertex* v1, Vertex* v2, Vertex* v3);
     void addNewNonNLDEdge(Face* face);
     glm::vec3 getAnotherVertexPositionByEdge(Face* face, Edge* edge);
+
+    void simplification(float scale);
 
     Edge* findEdgeByPoints(Vertex* v1, Vertex* v2);
     int findVertexByPoint(glm::vec3& p);

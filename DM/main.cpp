@@ -6,8 +6,9 @@
 
 int main() {
     Mesh mesh;
-    mesh.readSTL("../file/c919.STL");
+    mesh.readSTL("../file/test.stl");
     mesh.generateDM();
+    mesh.simplification(0.5);
     mesh.saveSTLBinary("./test.stl");
 //    mesh.saveSTLASCII("./test.stl");
 /*   float angle = 1.57;
