@@ -52,10 +52,17 @@ void Edge::constructCe(double rhoV, double rhoE) {
 
 
 glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {
-	double len1 = sqrt((vertexe1->position.x - v1.x) * (vertexe1->position.x - v1.x) + (vertexe1->position.y - v1.y) * (vertexe1->position.y - v1.y) + (vertexe1->position.z - v1.z) * (vertexe1->position.z - v1.z));
-	double len2 = sqrt((vertexe1->position.x - v2.x) * (vertexe1->position.x - v2.x) + (vertexe1->position.y - v2.y) * (vertexe1->position.y - v2.y) + (vertexe1->position.z - v2.z) * (vertexe1->position.z - v2.z));
+	double len1 = glm::distance(v1, vertexe1->position);
+	double len2 = glm::distance(v2, vertexe1->position);
 	double part1 = len1 / length;	//v1和v2与起点距离在总长度的占比
 	double part2 = len2 / length;
+	if (part2 > 1 || part1 > 1) {
+		printf("debug");
+	}
+	if (edgeId == 5588) {
+		printf("debug");
+	}
+	double center = (part1 + part2) / 2;
 	
 	//glm::vec3 normal = glm::normalize(vertexe2->position - vertexe1->position);
 	glm::vec3 normal = vertexe2->position - vertexe1->position;
@@ -66,7 +73,22 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {
 		}
 	}
 	if (it != Ce.end()) {
-		if (*it <= part2) {	//找到位于v1、v2之间的第一个点
+/*		if (*it <= part2) {	//找到位于v1、v2之间的第一个点
+			glm::vec3 p = glm::vec3(0, 0, 0);
+			glm::vec3 vector = glm::vec3(*it, *it, *it) * normal;
+			p = p + vertexe1->position + vector;
+			Ce.erase(it);
+			return p;
+		}
+*/		//找到位于v1、v2之间的中间点
+
+		if ((*it) <= part2) {
+			while (it != Ce.end()&& (*it) < center) {
+				it++;
+			}
+			if (it == Ce.end()) {
+				it--;
+			}
 			glm::vec3 p = glm::vec3(0, 0, 0);
 			glm::vec3 vector = glm::vec3(*it, *it, *it) * normal;
 			p = p + vertexe1->position + vector;

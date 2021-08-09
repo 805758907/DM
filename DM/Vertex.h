@@ -8,7 +8,6 @@ public:
     glm::vec3 position;
     int vertexId;
     float q;
-    Edge* e;
     float eph = 0x7f7fffff;
     int lambda = 0;
 

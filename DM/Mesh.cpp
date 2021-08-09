@@ -116,10 +116,12 @@ std::pair<float, float> getSplitRegion(float tStart, float tEnd, float tE, float
     if (min2 <= tStart) {
         if (max1 >= tEnd) {
             return std::pair<float, float>(tStart, tEnd);   //四个满足
-
         }
         if (max1 >= tStart) {
             return std::pair<float, float>(tStart, max1);   //四个满足
+        }
+        if (max2 >= tEnd) {
+            return std::pair<float, float>(tStart, tEnd);   //三个满足
         }
         if (max2 >= tStart) {
             return std::pair<float, float>(tStart, max2);   //三个满足
@@ -137,16 +139,22 @@ std::pair<float, float> getSplitRegion(float tStart, float tEnd, float tE, float
             if (max1 >= tStart) {
                 return std::pair<float, float>(tStart, max1);   //三个满足
             }
+            if (max2 >= tEnd) {
+                return std::pair<float, float>(min2, tEnd);     //三个满足
+            }
             if (max2 >= min2) {
                 return std::pair<float, float>(min2, max2);   //三个满足
             }
-            return std::pair<float, float>(tStart, min2);   //两个满足
+            return std::pair<float, float>(min2, tEnd);   //两个满足
         }
         if (max1 >= tEnd) {
             return std::pair<float, float>(tStart, tEnd);   //三个满足
         }
         if (max1 >= tStart) {
             return std::pair<float, float>(tStart, max1);   //三个满足
+        }
+        if (max2 >= tEnd) {
+            return std::pair<float, float>(tStart, tEnd);   //两个满足
         }
         if (max2 >= tStart) {
             return std::pair<float, float>(tStart, max2);   //两个满足
@@ -158,9 +166,9 @@ std::pair<float, float> getSplitRegion(float tStart, float tEnd, float tE, float
             return std::pair<float, float>(min2, tEnd);     //四个都满足
         }
         if (min1 <= tEnd) {
-            return std::pair<float, float>(min1, tEnd);     //三个都满足
+            return std::pair<float, float>(min1, tEnd);     //三个满足
         }
-        return std::pair<float, float>(tStart, tEnd);     //两个都满足
+        return std::pair<float, float>(tStart, tEnd);     //两个满足
     }
     if (max2 >= tEnd) {
         if (max1 >= min2) {
@@ -177,7 +185,7 @@ std::pair<float, float> getSplitRegion(float tStart, float tEnd, float tE, float
         if (min1 <= tEnd) {
             return std::pair<float, float>(min1, tEnd);     //两个满足
         }
-        return std::pair<float, float>(tStart, tEnd);     //两个满足
+        return std::pair<float, float>(tStart, tEnd);     //一个满足
     }
     if (min2 <= max1) {
         return std::pair<float, float>(min2, max1);     //四个都满足
@@ -279,13 +287,13 @@ glm::vec3 rotatePoint(glm::vec3& normalFixed, glm::vec3& normalRotated, glm::vec
     float angle = acos(cosAngle);                           //旋转的弧度
     glm::vec3 o = glm::normalize(glm::cross(normalFixed, normalRotated));   //判断旋转方向，与交线同向则顺时针旋转；反向则逆时针旋转
     glm::mat4 trans = glm::mat4(1.0f); //创建单位矩阵
-    if (o.x == edgeNormal.x) {//同向
-        trans = glm::rotate(trans, angle, edgeNormal);          //旋转矩阵
+    if ((o.x >= 0 && edgeNormal.x < 0) || (o.x <= 0 && edgeNormal.x > 0)) {  //反向(因为glm::rotate函数本来就是逆时针旋转的）
+        ;
     }
-    else {
-        trans = glm::rotate(trans, -angle, edgeNormal);
+    else {                              //同向
+        angle = -angle;
     }
-
+    trans = glm::rotate(trans, angle, edgeNormal);          //旋转矩阵
     //把旋转轴移动到原点，再旋转，再移动回来
     glm::mat4 moveTo = glm::mat4(1.0f);
     moveTo = glm::translate(moveTo, -startPosition);
@@ -663,8 +671,7 @@ Edge* Mesh::generateEdge(Vertex* v1, Vertex* v2){
         edge = new Edge();
         edge->vertexe1 = pFirst;
         edge->vertexe2 = pSecond;
-        edge->length = sqrt(pow((edge->vertexe1->position.x - edge->vertexe2->position.x), 2)
-            + pow((edge->vertexe1->position.y - edge->vertexe2->position.y), 2) + pow((edge->vertexe1->position.z - edge->vertexe2->position.z), 2));
+        edge->length = glm::distance(edge->vertexe1->position, edge->vertexe2->position);
         if (edge->length > lMax) {
             lMax = edge->length;
         }
@@ -714,27 +721,24 @@ void Mesh::generateEdgeOfFace(Face* face, bool meshEdge){
     
     //求角度
 //    start = clock();
-    float cosTheta0 = glm::dot((face->vertexs[1]->position - face->vertexs[0]->position), (face->vertexs[2]->position - face->vertexs[0]->position)) / length01 / length02;
+//    float cosTheta0 = glm::dot((face->vertexs[1]->position - face->vertexs[0]->position), (face->vertexs[2]->position - face->vertexs[0]->position)) / length01 / length02;
+    float cosTheta0 = (length01 * length01 + length02 * length02 - length12 * length12) / 2 / length01 / length02;
     float sinTheta0 = sqrt(1 - cosTheta0 * cosTheta0);
-    if (sinTheta0 < 0.09) {
-        ;
-    }else if (sinTheta0 < sinThetaMin) {
+    if (sinTheta0 < sinThetaMin) {
         sinThetaMin = sinTheta0;
     }
     face->angles.push_back(cosTheta0);
-    float cosTheta1 = glm::dot((face->vertexs[0]->position - face->vertexs[1]->position), (face->vertexs[2]->position - face->vertexs[1]->position)) / length01 / length12;
+    float cosTheta1 = (length01 * length01 + length12 * length12 - length02 * length02) / 2 / length01 / length12;
+//    float cosTheta1 = glm::dot((face->vertexs[0]->position - face->vertexs[1]->position), (face->vertexs[2]->position - face->vertexs[1]->position)) / length01 / length12;
     float sinTheta1 = sqrt(1 - cosTheta1 * cosTheta1);
-    if (sinTheta1 < 0.09) {
-        ;
-    }else if (sinTheta1 < sinThetaMin) {
+    if (sinTheta1 < sinThetaMin) {
         sinThetaMin = sinTheta1;
     }
     face->angles.push_back(cosTheta1);
-    float cosTheta2 = glm::dot((face->vertexs[0]->position - face->vertexs[2]->position), (face->vertexs[1]->position - face->vertexs[2]->position)) / length12 / length02;
+    float cosTheta2 = (length12 * length12 + length02 * length02 - length01 * length01) / 2 / length12 / length02;
+//    float cosTheta2 = glm::dot((face->vertexs[0]->position - face->vertexs[2]->position), (face->vertexs[1]->position - face->vertexs[2]->position)) / length12 / length02;
     float sinTheta2 = sqrt(1 - cosTheta2 * cosTheta2);
-    if (sinTheta2 < 0.09) {
-        ;
-    }else if (sinTheta2 < sinThetaMin) {
+    if (sinTheta2 < sinThetaMin) {
         sinThetaMin = sinTheta2;
     }
 
@@ -745,7 +749,7 @@ void Mesh::generateEdgeOfFace(Face* face, bool meshEdge){
 void Mesh::computeParameter(){
     float v1 = lMin * sinThetaMin / (0.5 + sinThetaMin);
     float v2 = lMin / 2;
-    if (v1 < v2 && v1 > 0.002) {
+    if (v1 < v2) {
         rhoV = v1;
     }
     else {
@@ -793,6 +797,9 @@ void Mesh::generateDM(){
 */
 
 void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
+    if (edge->edgeId == 5314) {
+        printf("debug");
+    }
     Vertex* vertexA = edge->vertexe1;
     Vertex* vertexB = edge->vertexe2;
     if (edge->faceId.size() == 2) {
@@ -824,11 +831,17 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         float angle = acos(cosAngle);                   //旋转的弧度
         glm::vec3 ve = glm::normalize(vertexA->position - vertexB->position); //该边的向量
         glm::vec3 o = glm::normalize(glm::cross(normalABD, normalABC));   //判断旋转方向，与交线同向则顺时针旋转；反向则逆时针旋转
-        if (o.x != ve.x) {//同向
+        if ((o.x >=0 && ve.x < 0) || (o.x <= 0 && ve.x > 0)) {  //反向(因为glm::rotate函数本来就是逆时针旋转的）
+            //angle = -angle;
+        }
+        else {
             angle = -angle;
         }
         glm::mat4 trans = glm::mat4(1.0f);              //创建单位矩阵
         trans = glm::rotate(trans, angle, ve);          //旋转矩阵
+
+        glm::mat4 trans2 = glm::mat4(1.0f);              //创建单位矩阵
+        trans2 = glm::rotate(trans2, -angle, ve);          //旋转矩阵
 
         //把旋转轴移动到原点，再旋转，再移动回来
         glm::mat4 moveTo = glm::mat4(1.0f);
@@ -843,6 +856,8 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         Edge* parent = edge->parent;
         Vertex* pStart = parent->vertexe1;
         Vertex* pEnd = parent->vertexe2;
+
+        glm::vec4 newVertexCPosition2 = moveBack * trans2 * moveTo * vertexCPosition;
 
         glm::vec3 center = solveCenterPointOfCircle(vertexA->position, vertexD->position, newVertexCPos);
         float tEnd = getAnotherPoint(vertexB->position, vertexA->position, center);
@@ -1183,15 +1198,21 @@ bool Mesh::isNLD(Edge* edge){
     edge->flippable = false;
     if (edge->faceId.size() == 1) {
         Face* face = faces[*(edge->faceId.begin())];
-        Vertex* top;
+        Vertex* top = nullptr;
+        Vertex* a = edge->vertexe1;
+        Vertex* b = edge->vertexe2;
         float cos = 0.0;
         for (int i = 0; i < 3; i++) {
             if (face->vertexs[i]->vertexId != edge->vertexe1->vertexId && face->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
                 top = face->vertexs[i];
-                cos = face->angles[i];
+ //               cos = face->angles[i];
                 break;
             }
         }
+        float length01 = glm::distance(a->position, top->position);
+        float length02 = glm::distance(b->position, top->position);
+
+        cos = glm::dot((a->position - top->position), (b->position - top->position)) / length01 / length02;
         if (cos < 0) {
             return true;
         }
@@ -1202,25 +1223,33 @@ bool Mesh::isNLD(Edge* edge){
     else if(edge->faceId.size() == 2) {
         Face* face1 = faces[*(edge->faceId.begin())];
         Face* face2 = faces[*(++edge->faceId.begin())];
-
-        Vertex* top1;
-        Vertex* top2;
+        Vertex* a = edge->vertexe1;
+        Vertex* b = edge->vertexe2;
+        Vertex* top1 = nullptr;
+        Vertex* top2 = nullptr;
         float cos1 = 0.0;
         float cos2 = 0.0;
         for (int i = 0; i < 3; i++) {
             if (face1->vertexs[i]->vertexId != edge->vertexe1->vertexId && face1->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
                 top1 = face1->vertexs[i];
-                cos1 = face1->angles[i];
+//                cos1 = face1->angles[i];
                 break;
             }
         }
         for (int i = 0; i < 3; i++) {
             if (face2->vertexs[i]->vertexId != edge->vertexe1->vertexId && face2->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
                 top2 = face2->vertexs[i];
-                cos2 = face2->angles[i];
+ //               cos2 = face2->angles[i];
                 break;
             }
         }
+        float length01 = glm::distance(a->position, top1->position);
+        float length02 = glm::distance(b->position, top1->position);
+        cos1 = glm::dot((a->position - top1->position), (b->position - top1->position)) / length01 / length02;
+
+        float length31 = glm::distance(a->position, top2->position);
+        float length32 = glm::distance(b->position, top2->position);
+        cos2 = glm::dot((a->position - top2->position), (b->position - top2->position)) / length31 / length32;
         //求角度之和，用sin(1+2) = sin(1)*cos(2) + cos(1)*sin(2)
         float sin1 = sqrt(1 - cos1 * cos1);
         float sin2 = sqrt(1 - cos2 * cos2);
@@ -1239,16 +1268,18 @@ bool Mesh::isNLD(Edge* edge){
 
     }
     else {
+        printf("empty face of edge %d\n", edge->edgeId);
         return false;
     }
 }
 
 void Mesh::findAllNLDEdges(){
     for (auto it = edges.begin(); it != edges.end(); it++) {
-        if ((*it)->faceId.size() != 2) {
+/*        if ((*it)->faceId.size() != 2) {
             continue;
         }
-        else if ((*it)->inStack == false && isNLD(*it)) {
+        else
+ */       if ((*it)->inStack == false && isNLD(*it)) {
             (*it)->inStack = true;
             NLDEdges.push(*it);
         }
@@ -1375,6 +1406,9 @@ void Mesh::flipEdge(Edge* edgeAB){
     
     
     //删除边
+    for (auto it = edgeAB->meshFaceId.begin(); it != edgeAB->meshFaceId.end(); it++) {
+        addNewNonNLDEdge(faces[*it]);
+    }
     std::pair<int, int> edgePair(edgeAB->vertexe1->vertexId, edgeAB->vertexe2->vertexId);
     m_hash_edge.erase(edgePair);
     for (auto it = edges.begin(); it != edges.end(); it++) {
@@ -1387,6 +1421,8 @@ void Mesh::flipEdge(Edge* edgeAB){
 
     faceABC->deleted = true;
     faceABD->deleted = true;
+
+    
 }
 
 Face* Mesh::getParentFace(Edge* edge, Face* childFace){
