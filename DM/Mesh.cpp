@@ -850,6 +850,8 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         glm::mat4 moveBack = glm::mat4(1.0f);
         moveBack = glm::translate(moveBack, vertexB->position);
 
+        bool antiClockWishOfABInABD = judgeAntiClockWish(faceABD, vertexA, vertexB);
+
         //旋转对角
         glm::vec4 newVertexCPosition = moveBack * trans * moveTo * vertexCPosition;
         glm::vec3 newVertexCPos = glm::vec3(newVertexCPosition);
@@ -879,7 +881,24 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
             //再旋转另外两个三角面到达在同一平面
             glm::vec3 newVertexEPos = glm::vec3(newVertexEPosition);
-            glm::vec3 normalACE = calNormal(vertexA->position, newVertexCPos, newVertexEPos);
+            
+/*            Face* faceACE = nullptr;
+            if (*(edgeAC->faceId.begin()) != faceABC->faceId) {
+                faceACE = faces[*(edgeAC->faceId.begin())];
+            }
+            else {
+                faceACE = faces[*(++edgeAC->faceId.begin())];
+            }
+            bool antiClockWish = judgeAntiClockWish(faceACE, vertexA, vertexC);
+*/            glm::vec3 normalACE;              
+            if (antiClockWishOfABInABD) {            //AB在ABD为逆时针，则在ABC为顺时针，所以AC在ABC为逆时针，在ACE为顺时针
+                normalACE = calNormal(newVertexCPos, vertexA->position, newVertexEPos);
+            }
+            else {
+                normalACE = calNormal(vertexA->position, newVertexCPos, newVertexEPos);
+
+            }
+
             glm::vec3 newAC = glm::normalize(newVertexCPos - vertexA->position); //该边的向量
             newVertexEPos = rotatePoint(normalABD, normalACE, newAC, vertexA->position, newVertexEPos);
 
@@ -897,7 +916,15 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
             //再旋转另外两个三角面到达在同一平面
             glm::vec3 newVertexFPos = glm::vec3(newVertexFPosition);
-            glm::vec3 normalBCF = calNormal(vertexB->position, newVertexCPos, newVertexFPos);
+            glm::vec3 normalBCF;
+            if (antiClockWishOfABInABD) {            //AB在ABD为逆时针，则在ABC为顺时针，所以BC在ABC为顺时针，在BCF为逆时针
+                normalBCF = calNormal(vertexB->position, newVertexCPos, newVertexFPos);
+            }
+            else {
+                normalBCF = calNormal(newVertexCPos, vertexB->position, newVertexFPos);
+
+            }
+//            glm::vec3 normalBCF = calNormal(vertexB->position, newVertexCPos, newVertexFPos);
             glm::vec3 newBC = glm::normalize(newVertexCPos - vertexB->position); //该边的向量
             newVertexFPos = rotatePoint(normalABD, normalBCF, newBC, vertexB->position, newVertexFPos);
 
@@ -929,7 +956,16 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
             glm::vec4 vertexHPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABD, edgeAD), 1);
             glm::vec3 vertexHPos = glm::vec3(vertexHPosition);
 
-            glm::vec3 normalADH = calNormal(vertexA->position, vertexD->position, vertexHPos);
+            glm::vec3 normalADH;
+            if (antiClockWishOfABInABD) {            //AB在ABD为逆时针，则AD在ABD为顺时针，所以AD在ADH为逆时针
+                normalADH = calNormal(vertexA->position, vertexD->position, vertexHPos);
+            }
+            else {
+                normalADH = calNormal(vertexD->position, vertexA->position, vertexHPos);
+
+            }
+
+//            glm::vec3 normalADH = calNormal(vertexA->position, vertexD->position, vertexHPos);
             glm::vec3 newAD = glm::normalize(vertexD->position - vertexA->position); //该边的向量
             vertexHPos = rotatePoint(normalABD, normalADH, newAD, vertexA->position, vertexHPos);
 
@@ -946,7 +982,16 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
             glm::vec4 vertexGPosition = glm::vec4(getAnotherVertexPositionByEdge(faceABD, edgeBD), 1);
 
             glm::vec3 vertexGPos = glm::vec3(vertexGPosition);
-            glm::vec3 normalBDG = calNormal(vertexB->position, vertexGPos, vertexD->position);
+
+            glm::vec3 normalBDG;
+            if (antiClockWishOfABInABD) {            //AB在ABD为逆时针，则BD在ABD为逆时针，所以BD在BDG为顺时针
+                normalBDG = calNormal(vertexD->position, vertexB->position, vertexGPos);
+            }
+            else {
+                normalBDG = calNormal(vertexB->position, vertexD->position, vertexGPos);
+
+            }
+//            glm::vec3 normalBDG = calNormal(vertexB->position, vertexGPos, vertexD->position);
             glm::vec3 newBD = glm::normalize(vertexD->position - vertexB->position); //该边的向量
             vertexGPos = rotatePoint(normalABD, normalBDG, newBD, vertexB->position, vertexGPos);
 
@@ -967,6 +1012,8 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         //找到e ∈ E
         Edge* parentEdge = edge->parent;
         glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
+
+        printf("split edge %d at position: (%f,%f,%f)", edge->edgeId, splitPosition.x, splitPosition.y, splitPosition.z);
 
         Face* parentFaceOfABC = getParentFace(parentEdge, faceABC);
         Face* parentFaceOfABD = getParentFace(parentEdge, faceABD);

@@ -21,7 +21,7 @@ float getAnotherPoint1(glm::vec3& v3, glm::vec3& v1, glm::vec3& center) {
 
 int main() {
     Mesh mesh;
-    mesh.readSTL("../file/simple3.STL");
+    mesh.readSTL("../file/test.stl");
     mesh.generateDM();
     mesh.simplification(0.5);
     mesh.saveSTLBinary("./test.stl");
