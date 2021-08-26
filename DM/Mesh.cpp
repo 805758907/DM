@@ -4,6 +4,7 @@
 #include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <string>
 #include "time.h"//统计时间需添加的头文件
 #include "Mesh.h"
 
@@ -305,7 +306,7 @@ glm::vec3 rotatePoint(glm::vec3& normalFixed, glm::vec3& normalRotated, glm::vec
     return moveBack * trans * moveTo * point;
 }
 
-void setMeshFaceOfNewEdge(Face* meshFace, Face* newFace) {
+void setMeshFaceOfNewEdge(Face* meshFace, Face* newFace) {  //对新创建的面的新的边，添加其所在的meshface
     for (auto it = newFace->edges.begin(); it != newFace->edges.end(); it++) {
         bool exist = false;
         for (auto faceIt = (*it)->meshFaceId.begin(); faceIt != (*it)->meshFaceId.end(); faceIt++) {
@@ -318,6 +319,115 @@ void setMeshFaceOfNewEdge(Face* meshFace, Face* newFace) {
             (*it)->meshFaceId.insert(meshFace->faceId);
         }
     }
+}
+
+static inline unsigned int FindNextChar(unsigned int start, const char* str, unsigned int length, char token)
+{
+    unsigned int result = start;
+    while (result < length)
+    {
+        result++;
+        if (str[result] == token)
+            break;
+    }
+
+    return result;
+}
+
+glm::vec3 Mesh::ParseOBJVec3(const std::string& line)
+{
+    unsigned int tokenLength = line.length();
+    const char* tokenString = line.c_str();
+
+    unsigned int vertIndexStart = 2;
+
+    while (vertIndexStart < tokenLength)
+    {
+        if (tokenString[vertIndexStart] != ' ')
+            break;
+        vertIndexStart++;
+    }
+
+    unsigned int vertIndexEnd = FindNextChar(vertIndexStart, tokenString, tokenLength, ' ');
+
+    float x = atof(line.substr(vertIndexStart, vertIndexEnd - vertIndexStart).c_str());
+
+    vertIndexStart = vertIndexEnd + 1;
+    vertIndexEnd = FindNextChar(vertIndexStart, tokenString, tokenLength, ' ');
+
+    float y = atof(line.substr(vertIndexStart, vertIndexEnd - vertIndexStart).c_str());
+
+    vertIndexStart = vertIndexEnd + 1;
+    vertIndexEnd = FindNextChar(vertIndexStart, tokenString, tokenLength, ' ');
+
+    float z = atof(line.substr(vertIndexStart, vertIndexEnd - vertIndexStart).c_str());
+
+    return glm::vec3(x, y, z);
+}
+
+
+void Mesh::CreateOBJFace(const std::string& line)
+{
+    unsigned int tokenLength = line.length();
+    const char* tokenString = line.c_str();
+
+    std::vector<Vertex*> vs;
+    unsigned int vertIndexStart = 2;
+
+    while (vertIndexStart < tokenLength)
+    {
+        if (tokenString[vertIndexStart] != ' ')
+            break;
+        vertIndexStart++;
+    }
+
+    unsigned int vertIndexEnd = FindNextChar(vertIndexStart, tokenString, tokenLength, ' ');
+
+    int v1 = atoi(line.substr(vertIndexStart, vertIndexEnd - vertIndexStart).c_str()) - 1;
+    vs.push_back(vertexes[v1]);
+
+    vertIndexStart = vertIndexEnd + 1;
+    vertIndexEnd = FindNextChar(vertIndexStart, tokenString, tokenLength, ' ');
+
+    int v2 = atoi(line.substr(vertIndexStart, vertIndexEnd - vertIndexStart).c_str()) - 1;
+    vs.push_back(vertexes[v2]);
+
+    vertIndexStart = vertIndexEnd + 1;
+    vertIndexEnd = FindNextChar(vertIndexStart, tokenString, tokenLength, ' ');
+
+    int v3 = atoi(line.substr(vertIndexStart, vertIndexEnd - vertIndexStart).c_str()) - 1;
+    vs.push_back(vertexes[v3]);
+
+    Face* face = new Face();
+    face->setId(faces.size());
+    face->setVertex(vs);
+    face->children.push_back(face);
+    generateEdgeOfFace(face, true);
+    face->calNormalOfFace();
+    faces.push_back(face);
+    faceNum++;
+
+
+    if (vertIndexEnd < tokenLength -1) {
+        Face* face2 = new Face();
+        std::vector<Vertex*> vs2;
+        vertIndexStart = vertIndexEnd + 1;
+        vertIndexEnd = FindNextChar(vertIndexStart, tokenString, tokenLength, ' ');
+
+        vs2.push_back(vertexes[v1]);
+        vs2.push_back(vertexes[v3]);
+        int v4 = atoi(line.substr(vertIndexStart, vertIndexEnd - vertIndexStart).c_str()) - 1;
+        vs2.push_back(vertexes[v4]);
+
+        face2->setId(faces.size());
+        face2->setVertex(vs2);
+        face2->children.push_back(face2);
+        generateEdgeOfFace(face2, true);
+        face2->calNormalOfFace();
+        faces.push_back(face2);
+        faceNum++;
+    }
+    
 }
 
 Mesh::Mesh() {
@@ -352,6 +462,57 @@ bool Mesh::readSTL(const char *fileName) {
 
     
 
+}
+
+bool Mesh::readOBJ(const char* fileName)
+{
+    std::ifstream file;
+    file.open(fileName);
+    int bla1;
+    std::string line;
+
+    if (file.is_open()) {
+        while (file.good())
+        {
+            getline(file, line);
+            unsigned int lineLength = line.length();
+            if (lineLength < 2)
+                continue;
+
+            const char* lineCStr = line.c_str();
+
+            switch (lineCStr[0])
+            {
+            case 'v':
+                if (lineCStr[1] == 't')
+                {
+//                    this->uvs.push_back(ParseOBJVec2(line));
+                }
+                else if (lineCStr[1] == 'n')
+                {
+                    this->normals.push_back(ParseOBJVec3(line));
+                    this->colors.push_back((normals.back() + glm::vec3(1)) * 0.5f);
+                }
+                else if (lineCStr[1] == ' ' || lineCStr[1] == '\t') {
+                    glm::vec3 position = ParseOBJVec3(line);
+                    Vertex * vertex = new Vertex();
+                    vertex->init(position);
+                    vertex->setId(vertexes.size());
+                    this->vertexes.push_back(vertex);
+                }
+                    
+                break;
+            case 'f':
+                CreateOBJFace(line);
+                break;
+            default: break;
+            };
+        }
+    }
+    else {
+        return false;
+    }
+    return true;
 }
 
 bool Mesh::readSTLASCII(const char *fileName) {
@@ -488,6 +649,34 @@ bool Mesh::readSTLBinary(const char* fileName) {
     
     return true;
 
+}
+
+bool Mesh::saveOBJ(const char* fileName)
+{
+    FILE* fp = nullptr;
+    int err = fopen_s(&fp, fileName, "w");
+    if (fp == nullptr) {
+        return false;
+    }
+    if (err != 0) {
+        return false;
+    }
+    int vertexCount = vertexes.size();
+    for (int i = 0; i < vertexCount; i++) {
+        glm::vec3 position = vertexes[i]->position;
+        fprintf(fp, "v %f %f %f\n", position.x, position.y, position.z);
+    }
+    fprintf(fp, "\n");
+    int totalFace = faces.size();
+    for (int i = 0; i < totalFace; i++) {
+        if (faces[i]->isMesh == true) {
+            for (auto it = faces[i]->children.begin(); it != faces[i]->children.end(); it++) {
+                if ((*it)->deleted == false) {
+                    fprintf(fp, "f %d %d %d\n", (*it)->vertexs[0]->vertexId+1, (*it)->vertexs[1]->vertexId+1, (*it)->vertexs[2]->vertexId+1);
+                }
+            }
+        }
+    }
 }
 
 bool Mesh::saveSTLASCII(const char *fileName) {
@@ -689,10 +878,10 @@ Edge* Mesh::generateEdge(Vertex* v1, Vertex* v2){
 }
 
 void Mesh::generateEdgeOfFace(Face* face, bool meshEdge){
-    if (face->faceId == 4082) {
+/*    if (face->faceId == 4082) {
         printf("debug");
-    }
-    Edge* edge01 = generateEdge(face->vertexs[0], face->vertexs[1]);
+    }   
+*/    Edge* edge01 = generateEdge(face->vertexs[0], face->vertexs[1]);
     edge01->faceId.insert(face->faceId);
     if (meshEdge) {
         edge01->meshFaceId.insert(face->faceId);
@@ -749,6 +938,7 @@ void Mesh::generateEdgeOfFace(Face* face, bool meshEdge){
 void Mesh::computeParameter(){
     float v1 = lMin * sinThetaMin / (0.5 + sinThetaMin);
     float v2 = lMin / 2;
+
     if (v1 < v2) {
         rhoV = v1;
     }
@@ -765,7 +955,7 @@ void Mesh::generateDM(){
         (*it)->constructCe(rhoV, rhoE);
     } 
     findAllNLDEdges();
-   while (!NLDEdges.empty()) {
+    while (!NLDEdges.empty()) {
         Edge* currentEdge = NLDEdges.top();
         NLDEdges.pop();
         if (isNLD(currentEdge)) {
@@ -797,10 +987,10 @@ void Mesh::generateDM(){
 */
 
 void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
-    if (edge->edgeId == 5314) {
+/*    if (edge->edgeId == 5314) {
         printf("debug");
     }
-    Vertex* vertexA = edge->vertexe1;
+*/    Vertex* vertexA = edge->vertexe1;
     Vertex* vertexB = edge->vertexe2;
     if (edge->faceId.size() == 2) {
         Face* faceABD = faces[*(edge->faceId.begin())];
@@ -840,8 +1030,8 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         glm::mat4 trans = glm::mat4(1.0f);              //创建单位矩阵
         trans = glm::rotate(trans, angle, ve);          //旋转矩阵
 
-        glm::mat4 trans2 = glm::mat4(1.0f);              //创建单位矩阵
-        trans2 = glm::rotate(trans2, -angle, ve);          //旋转矩阵
+//        glm::mat4 trans2 = glm::mat4(1.0f);              //创建单位矩阵
+//        trans2 = glm::rotate(trans2, -angle, ve);          //旋转矩阵
 
         //把旋转轴移动到原点，再旋转，再移动回来
         glm::mat4 moveTo = glm::mat4(1.0f);
@@ -859,7 +1049,7 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         Vertex* pStart = parent->vertexe1;
         Vertex* pEnd = parent->vertexe2;
 
-        glm::vec4 newVertexCPosition2 = moveBack * trans2 * moveTo * vertexCPosition;
+//        glm::vec4 newVertexCPosition2 = moveBack * trans2 * moveTo * vertexCPosition;
 
         glm::vec3 center = solveCenterPointOfCircle(vertexA->position, vertexD->position, newVertexCPos);
         float tEnd = getAnotherPoint(vertexB->position, vertexA->position, center);
@@ -1267,73 +1457,73 @@ bool Mesh::isNLD(Edge* edge){
             return false;
         }
     }
-    else if(edge->faceId.size() == 2) {
-        Face* face1 = faces[*(edge->faceId.begin())];
-        Face* face2 = faces[*(++edge->faceId.begin())];
-        Vertex* a = edge->vertexe1;
-        Vertex* b = edge->vertexe2;
-        Vertex* top1 = nullptr;
-        Vertex* top2 = nullptr;
-        float cos1 = 0.0;
-        float cos2 = 0.0;
-        for (int i = 0; i < 3; i++) {
-            if (face1->vertexs[i]->vertexId != edge->vertexe1->vertexId && face1->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
-                top1 = face1->vertexs[i];
-//                cos1 = face1->angles[i];
-                break;
-            }
+    else if (edge->faceId.size() == 2) {
+    Face* face1 = faces[*(edge->faceId.begin())];
+    Face* face2 = faces[*(++edge->faceId.begin())];
+    Vertex* a = edge->vertexe1;
+    Vertex* b = edge->vertexe2;
+    Vertex* top1 = nullptr;
+    Vertex* top2 = nullptr;
+    float cos1 = 0.0;
+    float cos2 = 0.0;
+    for (int i = 0; i < 3; i++) {
+        if (face1->vertexs[i]->vertexId != edge->vertexe1->vertexId && face1->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
+            top1 = face1->vertexs[i];
+            //                cos1 = face1->angles[i];
+            break;
         }
-        for (int i = 0; i < 3; i++) {
-            if (face2->vertexs[i]->vertexId != edge->vertexe1->vertexId && face2->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
-                top2 = face2->vertexs[i];
- //               cos2 = face2->angles[i];
-                break;
-            }
+    }
+    for (int i = 0; i < 3; i++) {
+        if (face2->vertexs[i]->vertexId != edge->vertexe1->vertexId && face2->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
+            top2 = face2->vertexs[i];
+            //               cos2 = face2->angles[i];
+            break;
         }
-        float length01 = glm::distance(a->position, top1->position);
-        float length02 = glm::distance(b->position, top1->position);
-        cos1 = glm::dot((a->position - top1->position), (b->position - top1->position)) / length01 / length02;
+    }
+    float length01 = glm::distance(a->position, top1->position);
+    float length02 = glm::distance(b->position, top1->position);
+    cos1 = glm::dot((a->position - top1->position), (b->position - top1->position)) / length01 / length02;
 
-        float length31 = glm::distance(a->position, top2->position);
-        float length32 = glm::distance(b->position, top2->position);
-        cos2 = glm::dot((a->position - top2->position), (b->position - top2->position)) / length31 / length32;
-        //求角度之和，用sin(1+2) = sin(1)*cos(2) + cos(1)*sin(2)
-        float sin1 = sqrt(1 - cos1 * cos1);
-        float sin2 = sqrt(1 - cos2 * cos2);
+    float length31 = glm::distance(a->position, top2->position);
+    float length32 = glm::distance(b->position, top2->position);
+    cos2 = glm::dot((a->position - top2->position), (b->position - top2->position)) / length31 / length32;
+    //求角度之和，用sin(1+2) = sin(1)*cos(2) + cos(1)*sin(2)
+    float sin1 = sqrt(1 - cos1 * cos1);
+    float sin2 = sqrt(1 - cos2 * cos2);
 
-        if ((sin1 * cos2 + cos1 * sin2) < 0) {
-            glm::vec3 normal1 = glm::normalize(face1->normal);
-            glm::vec3 normal2 = glm::normalize(face2->normal);
+    if ((sin1 * cos2 + cos1 * sin2) < 0) {
+        glm::vec3 normal1 = glm::normalize(face1->normal);
+        glm::vec3 normal2 = glm::normalize(face2->normal);
 
-            if ((normal1 == normal2) || (normal1 + normal2 == glm::vec3(0, 0, 0))) {
-                edge->flippable = true;
-                
-            }
-            return true;
+        if ((normal1 == normal2) || (normal1 + normal2 == glm::vec3(0, 0, 0))) {
+            edge->flippable = true;
+
         }
-        return false;
+        return true;
+    }
+    return false;
 
     }
     else {
-        printf("empty face of edge %d\n", edge->edgeId);
-        return false;
+    printf("empty face of edge %d\n", edge->edgeId);
+    return false;
     }
 }
 
-void Mesh::findAllNLDEdges(){
+void Mesh::findAllNLDEdges() {
     for (auto it = edges.begin(); it != edges.end(); it++) {
-/*        if ((*it)->faceId.size() != 2) {
-            continue;
-        }
-        else
- */       if ((*it)->inStack == false && isNLD(*it)) {
+        /*        if ((*it)->faceId.size() != 2) {
+                    continue;
+                }
+                else
+        */        if ((*it)->inStack == false && isNLD(*it)) {
             (*it)->inStack = true;
             NLDEdges.push(*it);
         }
     }
 }
 
-void Mesh::flipAllNLDEdgeInFace(Face* face){
+void Mesh::flipAllNLDEdgeInFace(Face* face) {
     if (face->faceId == 3886) {
         printf("debug");
     }
@@ -1343,7 +1533,7 @@ begin_process:
         for (auto edgeIt = (*childIt)->edges.begin(); edgeIt != (*childIt)->edges.end(); edgeIt++) {
             bool visited = false;
             auto it = visitedEdge.begin();
-            while(it != visitedEdge.end()) {
+            while (it != visitedEdge.end()) {
                 if ((*it) < (*edgeIt)->edgeId) {
                     it++;
                 }
@@ -1357,6 +1547,9 @@ begin_process:
             }
             if (!visited) {
                 visitedEdge.insert(it, (*edgeIt)->edgeId);
+                if (((*edgeIt)->vertexe1->vertexId == 2373 && (*edgeIt)->vertexe2->vertexId == 2378) || ((*edgeIt)->vertexe1->vertexId == 2375 && (*edgeIt)->vertexe2->vertexId == 2376)){
+                    printf("debug");
+                }
                 if (isNLD(*edgeIt)) {
                     if ((*edgeIt)->flippable == true) {
                         flipEdge((*edgeIt));

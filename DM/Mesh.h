@@ -59,6 +59,8 @@ public:
     std::list<Edge*> edges;
     std::vector<Vertex*> vertexes;
     std::stack<Edge*> NLDEdges;
+    std::vector<glm::vec3> normals;
+    std::vector< glm::vec3> colors;
     int edgeIndex = 0;
 
     std::unordered_map<glm::vec3, int, hash_point>	m_hash_point;
@@ -68,8 +70,10 @@ public:
     Mesh();
     ~Mesh();
     bool readSTL(const char* fileName);
+    bool readOBJ(const char* fileName);
     bool readSTLASCII(const char *fileName);
     bool readSTLBinary(const char* fileName);
+    bool saveOBJ(const char* fileName);
     bool saveSTLBinary(const char * fileName);
     bool saveSTLASCII(const char * fileName);
 
@@ -87,6 +91,8 @@ public:
     Face* generateNewFace(Face* parentFace, Vertex* v1, Vertex* v2, Vertex* v3);
     void addNewNonNLDEdge(Face* face);
     glm::vec3 getAnotherVertexPositionByEdge(Face* face, Edge* edge);
+    glm::vec3 ParseOBJVec3(const std::string& line);
+    void CreateOBJFace(const std::string& line);
 
     void simplification(float scale);
 

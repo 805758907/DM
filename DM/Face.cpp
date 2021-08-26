@@ -12,6 +12,12 @@ void Face::setNormal(glm::vec3& vec) {
     normal = n;
 }
 
+void Face::calNormalOfFace(){
+    glm::vec3 n1 = vertexs[1]->position - vertexs[0]->position;
+    glm::vec3 n2 = vertexs[2]->position - vertexs[0]->position;
+    normal = glm::normalize(glm::cross(n1, n2));
+}
+
 void Face::setVertex(std::vector<Vertex*>& vs){
     vertexs = vs;
 }

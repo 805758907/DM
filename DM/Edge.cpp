@@ -73,14 +73,25 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {
 		}
 	}
 	if (it != Ce.end()) {
-		if (*it <= part2) {	//找到位于v1、v2之间的第一个点
+/*		if ((*it) < part2) {	//找到位于v1、v2之间的最后一个点
+			while (it != Ce.end() && (*it) < part2) {
+				it++;
+			}
+			it--;
 			glm::vec3 p = glm::vec3(0, 0, 0);
 			glm::vec3 vector = glm::vec3(*it, *it, *it) * normal;
 			p = p + vertexe1->position + vector;
 			Ce.erase(it);
 			return p;
 		}
-/*		//找到位于v1、v2之间的中间点
+*/		if ((*it) <= part2) {	//找到位于v1、v2之间的第一个点
+			glm::vec3 p = glm::vec3(0, 0, 0);
+			glm::vec3 vector = glm::vec3(*it, *it, *it) * normal;
+			p = p + vertexe1->position + vector;
+			Ce.erase(it);
+			return p;
+		}
+/*	//找到位于v1、v2之间的中间点
 
 		if ((*it) <= part2) {
 			while (it != Ce.end()&& (*it) < center) {

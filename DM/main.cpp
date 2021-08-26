@@ -4,27 +4,14 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-float getAnotherPoint1(glm::vec3& v3, glm::vec3& v1, glm::vec3& center) {
-    float x31 = v3.x - v1.x;
-    float x21 = center.x - v1.x;
-    float y31 = v3.y - v1.y;
-    float y21 = center.y - v1.y;
-    float z31 = v3.z - v1.z;
-    float z21 = center.z - v1.z;
-
-
-    float t = 2 * (x31 * x21 + y31 * y21 + z31 * z21) / (x31 * x31 + y31 * y31 + z31 * z31);
-
-    //return glm::vec3(v1.x + t * x31, v1.y + t * y31, v1.z + t * z31);
-    return t;
-}
-
 int main() {
     Mesh mesh;
-    mesh.readSTL("../file/test.stl");
+    mesh.readOBJ("../file/testObj.obj");
+//    mesh.readSTL("../file/test.stl");
     mesh.generateDM();
     mesh.simplification(0.5);
     mesh.saveSTLBinary("./test.stl");
+    mesh.saveOBJ("./test2.obj");
 //    mesh.saveSTLASCII("./test.stl");
 /*   float angle = 1.57;   
     glm::vec3 ve (1,1,0); //该边的向量
@@ -40,7 +27,7 @@ int main() {
     glm::vec4 newVertex3Position = moveBack * trans * moveTo * glm::vec4(0,2,0,1);
 
 
-    glm::vec3 v1(1, 1, 3);
+    glm::vec3 v1(1, 1, 3); 
     glm::vec3 v2(1, 3, 1);
     glm::vec3 v3(2.414, 2, 2);
 

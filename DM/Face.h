@@ -19,10 +19,12 @@ public:
     Face();
     void setNormal(float i, float j, float k);
     void setNormal(glm::vec3& vec);
+    void calNormalOfFace();
     void setVertex(std::vector<Vertex*>& vs);
     void setId(int id);
     void deleteChild(Face* child);
     void deleteBorder(Edge* edge);
+    
     ~Face();
 };
 
