@@ -45,9 +45,23 @@ void Edge::constructCe(double rhoV, double rhoE) {
 			Ce.push_back(p);
 		}
 		Ce.push_back(1 - rhoVPart);
-	
-	}
 
+		
+	}
+/*
+	Ce.push_back(1 - rhoVPart);
+	if (length > 2 * rhoV) {
+		int pCount = (length - 2 * rhoV) / rhoE;
+		float p = 1 - rhoVPart;
+		for (int i = 1; i <= pCount; i++) {
+			p -= rhoEPart;
+			Ce.push_front(p);
+		}
+		Ce.push_front(rhoVPart);
+
+
+	}
+	*/
 }
 
 
@@ -84,21 +98,25 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {
 			Ce.erase(it);
 			return p;
 		}
-*/		if ((*it) <= part2) {	//找到位于v1、v2之间的第一个点
+		if ((*it) <= part2) {	//找到位于v1、v2之间的第一个点
 			glm::vec3 p = glm::vec3(0, 0, 0);
 			glm::vec3 vector = glm::vec3(*it, *it, *it) * normal;
 			p = p + vertexe1->position + vector;
 			Ce.erase(it);
 			return p;
-		}
-/*	//找到位于v1、v2之间的中间点
+		}*/
+	//找到位于v1、v2之间的中间点
 
 		if ((*it) <= part2) {
 			while (it != Ce.end()&& (*it) < center) {
 				it++;
 			}
-			if (it == Ce.end()) {
+			if (it != Ce.begin()) {
 				it--;
+
+			}
+			if ((*it) < part1) {
+				it++;
 			}
 			glm::vec3 p = glm::vec3(0, 0, 0);
 			glm::vec3 vector = glm::vec3(*it, *it, *it) * normal;
@@ -106,7 +124,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {
 			Ce.erase(it);
 			return p;
 		}
-*/		//不在v1、v2中间，就找离v1或v2最近的点
+/**/		//不在v1、v2中间，就找离v1或v2最近的点
 		double dis2 = *(it) - part2;
 		double dis1;
 		if (it != Ce.begin()) {

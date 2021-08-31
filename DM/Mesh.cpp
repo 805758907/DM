@@ -8,6 +8,8 @@
 #include "time.h"//统计时间需添加的头文件
 #include "Mesh.h"
 
+float PI = 3.141592653589793115997963468544185161590576171875;
+
 //计算单位法向量，v1、v2、v3三点逆时针排布
 glm::vec3 calNormal(glm::vec3& v1, glm::vec3& v2, glm::vec3& v3) {
     glm::vec3 n = glm::cross(v2 - v1, v3 - v2);
@@ -955,7 +957,7 @@ void Mesh::generateDM(){
         (*it)->constructCe(rhoV, rhoE);
     } 
     findAllNLDEdges();
-    while (!NLDEdges.empty()) {
+   while (!NLDEdges.empty()) {
         Edge* currentEdge = NLDEdges.top();
         NLDEdges.pop();
         if (isNLD(currentEdge)) {
@@ -972,6 +974,9 @@ void Mesh::generateDM(){
 
     int count = 0;
     for (auto it = edges.begin(); it != edges.end(); it++) {
+        if ((*it)->vertexe1->vertexId == 341 && (*it)->vertexe2->vertexId == 5324) {
+            printf("debug");
+        }
         if (isNLD(*it)) {
             count++;
         }
@@ -1203,7 +1208,7 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         Edge* parentEdge = edge->parent;
         glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
 
-        printf("split edge %d at position: (%f,%f,%f)", edge->edgeId, splitPosition.x, splitPosition.y, splitPosition.z);
+        printf("split edge %d;", edge->edgeId, splitPosition.x, splitPosition.y, splitPosition.z);
 
         Face* parentFaceOfABC = getParentFace(parentEdge, faceABC);
         Face* parentFaceOfABD = getParentFace(parentEdge, faceABD);
@@ -1450,7 +1455,7 @@ bool Mesh::isNLD(Edge* edge){
         float length02 = glm::distance(b->position, top->position);
 
         cos = glm::dot((a->position - top->position), (b->position - top->position)) / length01 / length02;
-        if (cos < 0) {
+        if (cos < 0.00001) {
             return true;
         }
         else {
@@ -1458,55 +1463,85 @@ bool Mesh::isNLD(Edge* edge){
         }
     }
     else if (edge->faceId.size() == 2) {
-    Face* face1 = faces[*(edge->faceId.begin())];
-    Face* face2 = faces[*(++edge->faceId.begin())];
-    Vertex* a = edge->vertexe1;
-    Vertex* b = edge->vertexe2;
-    Vertex* top1 = nullptr;
-    Vertex* top2 = nullptr;
-    float cos1 = 0.0;
-    float cos2 = 0.0;
-    for (int i = 0; i < 3; i++) {
-        if (face1->vertexs[i]->vertexId != edge->vertexe1->vertexId && face1->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
-            top1 = face1->vertexs[i];
-            //                cos1 = face1->angles[i];
-            break;
+        Face* face1 = faces[*(edge->faceId.begin())];
+        Face* face2 = faces[*(++edge->faceId.begin())];
+        Vertex* a = edge->vertexe1;
+        Vertex* b = edge->vertexe2;
+        Vertex* top1 = nullptr;
+        Vertex* top2 = nullptr;
+        float cos1 = 0.0;
+        float cos2 = 0.0;
+        for (int i = 0; i < 3; i++) {
+            if (face1->vertexs[i]->vertexId != edge->vertexe1->vertexId && face1->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
+                top1 = face1->vertexs[i];
+                //                cos1 = face1->angles[i];
+                break;
+            }
         }
-    }
-    for (int i = 0; i < 3; i++) {
-        if (face2->vertexs[i]->vertexId != edge->vertexe1->vertexId && face2->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
-            top2 = face2->vertexs[i];
-            //               cos2 = face2->angles[i];
-            break;
+        for (int i = 0; i < 3; i++) {
+            if (face2->vertexs[i]->vertexId != edge->vertexe1->vertexId && face2->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
+                top2 = face2->vertexs[i];
+                //               cos2 = face2->angles[i];
+                break;
+            }
         }
-    }
-    float length01 = glm::distance(a->position, top1->position);
-    float length02 = glm::distance(b->position, top1->position);
-    cos1 = glm::dot((a->position - top1->position), (b->position - top1->position)) / length01 / length02;
+        float length01 = glm::distance(a->position, top1->position);
+        float length02 = glm::distance(b->position, top1->position);
+        cos1 = glm::dot((a->position - top1->position), (b->position - top1->position)) / length01 / length02;
 
-    float length31 = glm::distance(a->position, top2->position);
-    float length32 = glm::distance(b->position, top2->position);
-    cos2 = glm::dot((a->position - top2->position), (b->position - top2->position)) / length31 / length32;
-    //求角度之和，用sin(1+2) = sin(1)*cos(2) + cos(1)*sin(2)
-    float sin1 = sqrt(1 - cos1 * cos1);
-    float sin2 = sqrt(1 - cos2 * cos2);
+        float length31 = glm::distance(a->position, top2->position);
+        float length32 = glm::distance(b->position, top2->position);
+        cos2 = glm::dot((a->position - top2->position), (b->position - top2->position)) / length31 / length32;
+        //求角度之和，用sin(1+2) = sin(1)*cos(2) + cos(1)*sin(2)
+        float sin1 = sqrt(1 - cos1 * cos1);
+        float sin2 = sqrt(1 - cos2 * cos2);
+        float angle1 = acos(cos1);
+        float angle2 = acos(cos2);
+        float sin12 = (sin1 * cos2 + cos1 * sin2);
+        if (sin12 < 0.00001 || (angle1+angle2) > PI) {
+            glm::vec3 normal1 = glm::normalize(face1->normal);
+            glm::vec3 normal2 = glm::normalize(face2->normal);
+            glm::vec3 dif = normal1 - normal2;
+            if (glm::distance(dif, glm::vec3(0,0,0)) < 0.000002 || (normal1 + normal2 == glm::vec3(0, 0, 0))) {
+                if (top1->vertexId < top2->vertexId) {
+                    if (findEdgeByPoints(top1, top2) != nullptr) {
+                        return true;
+                    }
+                }
+                else {
+                    if (findEdgeByPoints(top2, top1) != nullptr) {
+                        return true;
+                    }
+                }
+                edge->flippable = true;
+                if (sin12 < 0) {
+                    return true;
+                }else {
+                    float cos3 = glm::dot((top1->position - a->position), (top2->position - a->position)) / length01 / length31;
+                    float cos4 = glm::dot((top1->position - b->position), (top2->position - b->position)) / length02 / length32;
+                    float sin3 = sqrt(1 - cos3 * cos3);
+                    float sin4 = sqrt(1 - cos4 * cos4);
+                    float angle3 = acos(cos3);
+                    float angle4 = acos(cos4);
+                    if ((sin3 * cos4 + cos3 * sin4)<= 0  ||(angle3 + angle4) >= PI) {
+                        return false;
+                    }
+                    return true;
+                }
 
-    if ((sin1 * cos2 + cos1 * sin2) < 0) {
-        glm::vec3 normal1 = glm::normalize(face1->normal);
-        glm::vec3 normal2 = glm::normalize(face2->normal);
-
-        if ((normal1 == normal2) || (normal1 + normal2 == glm::vec3(0, 0, 0))) {
-            edge->flippable = true;
-
+            }
+            return true;
+            
+            
+            
+            
         }
-        return true;
-    }
-    return false;
+        return false;
 
     }
     else {
-    printf("empty face of edge %d\n", edge->edgeId);
-    return false;
+        printf("empty face of edge %d\n", edge->edgeId);
+        return false;
     }
 }
 
@@ -1547,7 +1582,8 @@ begin_process:
             }
             if (!visited) {
                 visitedEdge.insert(it, (*edgeIt)->edgeId);
-                if (((*edgeIt)->vertexe1->vertexId == 2373 && (*edgeIt)->vertexe2->vertexId == 2378) || ((*edgeIt)->vertexe1->vertexId == 2375 && (*edgeIt)->vertexe2->vertexId == 2376)){
+                //if (((*edgeIt)->vertexe1->vertexId == 2373 && (*edgeIt)->vertexe2->vertexId == 2378) || ((*edgeIt)->vertexe1->vertexId == 2375 && (*edgeIt)->vertexe2->vertexId == 2376)){
+                if (((*edgeIt)->vertexe1->vertexId == 2109 && (*edgeIt)->vertexe2->vertexId == 2769) || ((*edgeIt)->vertexe1->vertexId == 2768 && (*edgeIt)->vertexe2->vertexId == 2770)){
                     printf("debug");
                 }
                 if (isNLD(*edgeIt)) {
