@@ -91,9 +91,15 @@ public:
     Face* generateNewFace(Face* parentFace, Vertex* v1, Vertex* v2, Vertex* v3);
     void addNewNonNLDEdge(Face* face);
     glm::vec3 getAnotherVertexPositionByEdge(Face* face, Edge* edge);
+    float getAnotherVertexDegreeByEdge(Face* face, Edge* edge);
     glm::vec3 ParseOBJVec3(const std::string& line);
     void CreateOBJFace(const std::string& line);
 
+    void init();
+    bool isTypeI(Vertex* vertex);
+    void isTypeII(Vertex* vertex);
+    void findTypeI();
+    
     void simplification(float scale);
 
     Edge* findEdgeByPoints(Vertex* v1, Vertex* v2);

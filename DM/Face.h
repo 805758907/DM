@@ -8,7 +8,8 @@ public:
     std::vector<Vertex*> vertexs;
     std::vector<Edge*> edges;
     glm::vec3 normal;
-    std::vector<double> angles;
+    glm::vec4 formula;
+    std::vector<float> angles;
     char buf[2];
     int faceId;
     std::list<Face*> children;      //Mesh的面只包含其他face，非Mesh的面只包含自己
@@ -20,6 +21,7 @@ public:
     void setNormal(float i, float j, float k);
     void setNormal(glm::vec3& vec);
     void calNormalOfFace();
+    void calFormula();
     void setVertex(std::vector<Vertex*>& vs);
     void setId(int id);
     void deleteChild(Face* child);

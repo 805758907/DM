@@ -1,9 +1,8 @@
 #pragma once
 
 #include "Vertex.h"
-#include<vector>
 #include<set>
-#include<list>
+
 
 class Edge
 {

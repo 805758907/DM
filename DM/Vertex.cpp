@@ -1,4 +1,5 @@
-#include "Vertex.h"
+#include "Edge.h"
+
 Vertex::Vertex() {
     vertexId = -1;
 }
