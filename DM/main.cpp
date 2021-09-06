@@ -6,12 +6,12 @@
 
 int main() {
     Mesh mesh;
-//    mesh.readOBJ("../file/testObj.obj");
+    mesh.readOBJ("../file/simpleObj.obj");
 //    mesh.readSTL("../file/test.stl");
-//    mesh.generateDM();
-//    mesh.simplification(0.5);
- //   mesh.saveSTLBinary("./test.stl");
- //   mesh.saveOBJ("./test2.obj");
+    mesh.generateDM();
+    mesh.simplification(0.5);
+    mesh.saveSTLBinary("./test.stl");
+    mesh.saveOBJ("./test2.obj");
 
     /*
 

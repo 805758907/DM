@@ -88,7 +88,8 @@ public:
     void flipEdge(Edge* edge);
     Face* getParentFace(Edge* edge, Face* childFace);
     Vertex* generateNewVertex(glm::vec3&);
-    Face* generateNewFace(Face* parentFace, Vertex* v1, Vertex* v2, Vertex* v3);
+    Face* generateNewFace(Vertex* v1, Vertex* v2, Vertex* v3);
+    Face* generateNewFaceFromOldFace(Face* parentFace, Vertex* v1, Vertex* v2, Vertex* v3);
     void addNewNonNLDEdge(Face* face);
     glm::vec3 getAnotherVertexPositionByEdge(Face* face, Edge* edge);
     float getAnotherVertexDegreeByEdge(Face* face, Edge* edge);
@@ -97,7 +98,7 @@ public:
 
     void init();
     bool isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles);
-    bool isTypeII(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles, std::vector<Vertex*>& incidentVertexes);
+    bool isTypeII(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles);
     void findTypeIAndTypeII();
     
     void simplification(float scale);

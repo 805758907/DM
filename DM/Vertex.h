@@ -18,6 +18,7 @@ public:
     std::vector<Edge*> incidentEdges;
     std::vector<Vertex*> incidentVertexes;
     Edge* e = nullptr;
+    int eIndex = -1;    //eÔÚincidentEdgesµÄĞòºÅ
     bool typeI = false;
     bool typeII = false;
 public:
