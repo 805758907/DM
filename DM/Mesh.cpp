@@ -5,10 +5,17 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <string>
+#include <queue>
 #include "time.h"//统计时间需添加的头文件
 #include "Mesh.h"
 
 float PI = 3.141592653589793115997963468544185161590576171875;
+
+struct cmp {
+    bool operator()(Vertex* x, Vertex* y) {
+        return x->eph > y->eph;     // x小的优先级高
+    }
+};
 
 //计算单位法向量，v1、v2、v3三点逆时针排布
 glm::vec3 calNormal(glm::vec3& v1, glm::vec3& v2, glm::vec3& v3) {
@@ -1465,7 +1472,7 @@ bool Mesh::isNLD(Edge* edge){
         float length02 = glm::distance(b->position, top->position);
 
         cos = glm::dot((a->position - top->position), (b->position - top->position)) / length01 / length02;
-        if (cos < 0.00001) {
+        if (cos < -0.000001) {
             return true;
         }
         else {
@@ -1854,9 +1861,7 @@ void Mesh::init(){
     }
 }
 
-bool Mesh::isTypeI(Vertex* vertex) {
-    std::vector<Face*> incidentFaces;
-    std::vector<float> subtendedAngles;
+bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles) {
     //重新排布incidentEdges，使得相邻两条边在同一三角面上
     int n = vertex->incidentEdges.size();
     if (n < 4) {
@@ -1864,8 +1869,10 @@ bool Mesh::isTypeI(Vertex* vertex) {
     }
     else {
         std::pair<int, int> edgePair;
+        vertex->incidentVertexes[0] = vertex->incidentEdges[0]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[0]->vertexe2 : vertex->incidentEdges[0]->vertexe1;
         for (int i = 0; i < n; i++) {
-            int i1 = vertex->incidentEdges[i]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[i]->vertexe2->vertexId : vertex->incidentEdges[i]->vertexe1->vertexId;
+//            int i1 = vertex->incidentEdges[i]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[i]->vertexe2->vertexId : vertex->incidentEdges[i]->vertexe1->vertexId;
+            int i1 = vertex->incidentVertexes[i]->vertexId;
             for (int j = 1 + 1; j < n; j++) {
                 int i2 = vertex->incidentEdges[j]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[j]->vertexe2->vertexId : vertex->incidentEdges[j]->vertexe1->vertexId;
                 if (i1 > i2) {
@@ -1880,6 +1887,7 @@ bool Mesh::isTypeI(Vertex* vertex) {
                     Edge* tmp = vertex->incidentEdges[i + 1];
                     vertex->incidentEdges[i + 1] = vertex->incidentEdges[j];
                     vertex->incidentEdges[j] = tmp;
+                    vertex->incidentVertexes[i + 1] = vertexes[i2];
                     break;
                 }
             }
@@ -1959,7 +1967,7 @@ bool Mesh::isTypeI(Vertex* vertex) {
 
         float cos0 = glm::dot((neighborV->position - v1->position), (v0->position - v1->position)) / lengthV1 / length01;
         if (subtendedAngles[firstIndex] == -5) {    //没有外对角，则判断内对角
-            if (cos0 < 0.00001) {    //不满足条件
+            if (cos0 < -0.000001) {    //不满足条件
                 continue;
             }
         }
@@ -1981,7 +1989,7 @@ bool Mesh::isTypeI(Vertex* vertex) {
 
         cos0 = glm::dot((neighborV->position - v1->position), (v0->position - v1->position)) / lengthV1 / length01;
         if (subtendedAngles[firstIndex] == -5) {    //没有外对角，则判断内对角
-            if (cos0 < 0.00001) {    //不满足条件
+            if (cos0 < -0.000001) {    //不满足条件
                 continue;
             }
         }
@@ -2006,7 +2014,7 @@ bool Mesh::isTypeI(Vertex* vertex) {
 
             float cos = glm::dot((v1->position - neighborV->position), (v0->position - neighborV->position)) / length1 / length2;
             if (subtendedAngles[j] == -5) {    //没有外对角，则判断内对角
-                if (cos < 0.00001) {    //不满足条件
+                if (cos < -0.000001) {    //不满足条件
                     sat = false;
                     break;
                 }
@@ -2074,26 +2082,111 @@ bool Mesh::isTypeI(Vertex* vertex) {
             }
         }
     }
-    return true;
-}
-
-
-void Mesh::findTypeI(){
-    for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
-        if (!isTypeI(*it)) {
-            isTypeII(*it);
-        }
+    if (vertex->typeI == true) {
+        return true;
+    }
+    else {
+        return false;
     }
 }
 
-void Mesh::isTypeII(Vertex* vertex){
 
+void Mesh::findTypeIAndTypeII(){
+    std::vector<Face*> incidentFaces;
+    std::vector<float> subtendedAngles;
+    std::vector<Vertex*> incidentVertexes;
+    for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
+        if (!isTypeI(*it, incidentFaces, subtendedAngles)) {
+            isTypeII(*it, incidentFaces, subtendedAngles, incidentVertexes);
+        }
+        incidentFaces.clear();
+        subtendedAngles.clear();
+    }
+}
+
+bool Mesh::isTypeII(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles, std::vector<Vertex*>& incidentVertexes){
+    int edgeCount = vertex->incidentEdges.size();
+    int faceCount = incidentFaces.size();
+    for (int i = 0; i < edgeCount; i++) {//对第i条边检查
+        Vertex* v1 = incidentVertexes[i];
+        int nextIndex = (i + 1) % edgeCount;
+        Vertex* v2 = incidentVertexes[nextIndex];
+        int remainingPiontsCount = edgeCount - 2;
+        int j = (nextIndex + 1) % edgeCount;
+        while (remainingPiontsCount > 0) {
+            Vertex* v3 = incidentVertexes[j];
+            float length13 = glm::distance(v1->position, v3->position);
+            float length23 = glm::distance(v2->position, v3->position);
+
+            float cos = glm::dot((v2->position - v3->position), (v1->position - v3->position)) / length13 / length23;
+            if (subtendedAngles[j] == -5) {    //没有外对角，则判断内对角
+                if (cos < -0.000001) {    //不满足条件
+                    return false;
+                }
+
+            }
+            else {
+                float sinj = sqrt(1 - subtendedAngles[j] * subtendedAngles[j]);
+                float sin = sqrt(1 - cos * cos);
+                float sinSum = sinj * cos + subtendedAngles[j] * sin;
+                if (sinSum < 0.00001) {
+                    return false;
+                }
+            }
+            j++;
+            j %= edgeCount;
+            remainingPiontsCount--;
+        }
+    }
+    vertex->typeII == true;
+    //
+    float minEph = 1000000000;
+    int minIndex = 0;
+    for (int i = 0; i < edgeCount; i++) {
+        glm::mat4 QSum = vertex->Q + incidentVertexes[i]->Q;
+        glm::vec4 v4 = glm::vec4(incidentVertexes[i]->position, 1);
+        glm::vec4 temp = v4 * QSum;
+        float eph = glm::dot(v4, temp);
+        if (eph < minEph) {
+            minEph = eph;
+            minIndex = i;
+        }
+    }
+    vertex->e = vertex->incidentEdges[minIndex];
+    float dH = 1000;
+    vertex->eph = minEph + (vertex->lambda + incidentVertexes[minIndex]->lambda) * dH;
+
+    return true; 
 }
 
 void Mesh::simplification(float scale){
-
     init();
-    findTypeI();
+    findTypeIAndTypeII();
+    std::vector<Vertex*> vertexQueue;
+    for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
+        vertexQueue.push_back(*it);
+    }
+    make_heap(vertexQueue.begin(), vertexQueue.end(), cmp());
+    int totalVertexCount = vertexQueue.size();
+    int targetVertexCount = totalVertexCount * scale;
+    //开始简化
+    while (totalVertexCount > targetVertexCount) {
+        //取出最小点
+        pop_heap(vertexQueue.begin(), vertexQueue.end(), cmp());
+        Vertex* removeVertex = vertexQueue.back();
+        vertexQueue.pop_back();
+        Edge* contractEdge = removeVertex->e;
+        Vertex* resultVertex = contractEdge->vertexe1->vertexId == removeVertex->vertexId ? contractEdge->vertexe2 : contractEdge->vertexe1;
+        resultVertex->Q += removeVertex->Q;
+        resultVertex->lambda += removeVertex->lambda;
+    }
+
+/*   std::priority_queue<Vertex*, std::vector<Vertex*>, cmp> vertexQueue;
+    for(auto it = vertexes.begin(); it != vertexes.end(); it++) {
+        vertexQueue.push(*it);
+    }
+*/
+
 
 }
 

@@ -96,9 +96,9 @@ public:
     void CreateOBJFace(const std::string& line);
 
     void init();
-    bool isTypeI(Vertex* vertex);
-    void isTypeII(Vertex* vertex);
-    void findTypeI();
+    bool isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles);
+    bool isTypeII(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles, std::vector<Vertex*>& incidentVertexes);
+    void findTypeIAndTypeII();
     
     void simplification(float scale);
 

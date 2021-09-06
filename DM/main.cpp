@@ -1,8 +1,8 @@
 #include <iostream>
+#include <queue>
 #include "Mesh.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
 
 int main() {
     Mesh mesh;
@@ -12,6 +12,8 @@ int main() {
 //    mesh.simplification(0.5);
  //   mesh.saveSTLBinary("./test.stl");
  //   mesh.saveOBJ("./test2.obj");
+
+    /*
 
     glm::mat4 m;
     m[0][0] = 1;
@@ -41,5 +43,6 @@ int main() {
     float e1 = glm::dot(v3, res1);
     float e2 = glm::dot(v3, res2);
     glm::vec4 p = glm::vec4(0.5, 0.5, 0.5, 0.5) * v3 + glm::vec4(0.5, 0.5, 0.5, 0.5) * x;
+*/  
     return 0;
 }

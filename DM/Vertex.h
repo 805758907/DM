@@ -16,6 +16,7 @@ public:
     int lambda = 0;
     bool deleted = false;
     std::vector<Edge*> incidentEdges;
+    std::vector<Vertex*> incidentVertexes;
     Edge* e = nullptr;
     bool typeI = false;
     bool typeII = false;
