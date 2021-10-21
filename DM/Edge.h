@@ -12,6 +12,7 @@ class Edge
 public:
 	bool flippable = false;
 	bool inStack = false;
+	bool splitted = false;
 	Edge* parent;
 	double length;
 	std::set<int> faceId;		//当前所在的三角面

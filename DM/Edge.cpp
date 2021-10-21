@@ -142,7 +142,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {
 		return p;
 		
 	}
-	else {
+	else {//到最尾部还未找到在区间内的点，则选取最后一个点
 		glm::vec3 p = glm::vec3(0, 0, 0);
 		it--;
 		glm::vec3 vector = glm::vec3(*it, *it, *it) * normal;

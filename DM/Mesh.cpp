@@ -1232,6 +1232,7 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
         //分割：添加点
         Vertex* vertexS = generateNewVertex(splitPosition);
+        edge->splitted = true;
 
 //        glm::vec3 t1 = glm::normalize(parentEdge->vertexe1->position - splitPosition);
 //        glm::vec3 t2 = glm::normalize(splitPosition - parentEdge->vertexe2->position);
@@ -1392,6 +1393,7 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
         //分割：添加点
         Vertex* vertexS = generateNewVertex(splitPosition);
+        edge->splitted = true;
 
         bool antiClockWish = judgeAntiClockWish(faceABC, vertexA, vertexB);
         Face* faceACS = nullptr;
@@ -1841,14 +1843,13 @@ float Mesh::getAnotherVertexDegreeByEdge(Face* face, Edge* edge) {
 
 void Mesh::init(){
     //找到每个点的临近点
-/*    int edgeCount = edges.size();
+    int edgeCount = edges.size();
     for (auto it = edges.begin(); it != edges.end(); it++) {
-        //        if ((*it)->deleted == false) {
-        (*it)->vertexe1->incidentEdges.push_back(*it);
-        (*it)->vertexe2->incidentEdges.push_back(*it);
-        //        }
+        if ((*it)->splitted == false) {
+            (*it)->vertexe1->incidentEdges.push_back(*it);
+            (*it)->vertexe2->incidentEdges.push_back(*it);
+        }
     }
-*/    
     
     //计算每个面的方程
     for (auto it = faces.begin(); it != faces.end(); it++) {
@@ -1886,16 +1887,31 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vecto
     int n = vertex->incidentEdges.size();
     vertex->incidentVertexes.clear();
     vertex->incidentVertexes.assign(n, nullptr);
-    if (n < 4) {
-        return false;
+    bool notEqual = false;//边的数目与面的数目不一致，非内部点
+    if (n < 3) {//n=2
+        for (int i = 0; i < n; i++) {
+            vertex->incidentVertexes[i] = vertex->incidentEdges[i]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[i]->vertexe2 : vertex->incidentEdges[i]->vertexe1;
+        }
     }
     else {
-        std::pair<int, int> edgePair;
-        vertex->incidentVertexes[0] = vertex->incidentEdges[0]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[0]->vertexe2 : vertex->incidentEdges[0]->vertexe1;
+        
         for (int i = 0; i < n; i++) {
-//            int i1 = vertex->incidentEdges[i]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[i]->vertexe2->vertexId : vertex->incidentEdges[i]->vertexe1->vertexId;
-            int i1 = vertex->incidentVertexes[i]->vertexId;
-            for (int j = i + 1; j < n; j++) {
+            if (vertex->incidentEdges[i]->faceId.size() == 1) {//换到第一个位置
+                Edge* tmp = vertex->incidentEdges[i];
+                vertex->incidentEdges[i] = vertex->incidentEdges[0];
+                vertex->incidentEdges[0] = tmp;
+                notEqual = true;
+                break;
+            }
+        }
+
+ //       std::pair<int, int> edgePair;
+        vertex->incidentVertexes[0] = vertex->incidentEdges[0]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[0]->vertexe2 : vertex->incidentEdges[0]->vertexe1;
+        //incidentFaces.push_back(faces[*(vertex->incidentEdges[0]->faceId.begin())]);
+        for (int i = 0; i < n; i++) {
+            //            int i1 = vertex->incidentEdges[i]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[i]->vertexe2->vertexId : vertex->incidentEdges[i]->vertexe1->vertexId;
+/*            int i1 = vertex->incidentVertexes[i]->vertexId;
+            for (int j = i + 1; j < n; j++) {             //通过是否有边相连存在bug,因为有些原模型的边被分割，但为了方便查找，所以没有删除
                 int i2 = vertex->incidentEdges[j]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[j]->vertexe2->vertexId : vertex->incidentEdges[j]->vertexe1->vertexId;
                 if (i1 > i2) {
                     edgePair.first = i2;
@@ -1913,7 +1929,45 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vecto
                     break;
                 }
             }
+*/
+            Vertex* v1 = vertex->incidentVertexes[i];
+            int faceId = -1;
+            for (auto it = vertex->incidentEdges[i]->faceId.begin(); it != vertex->incidentEdges[i]->faceId.end(); it++) {//对每条边，找到它所属的面中没有访问过的，加入到incidentFaces中
+                bool visited = false;
+                for (auto faceIt = incidentFaces.begin(); faceIt != incidentFaces.end(); faceIt++) {
+                    if ((*faceIt)->faceId == (*it)) {
+                        visited = true;
+                        break;
+                    }
+                }
+                if (!visited) {
+                    faceId = (*it);
+                    incidentFaces.push_back(faces[*it]);
+                    break;
+                }
+            }
+            for (int j = i + 1; j < n; j++) {//通过面id来找相邻
+                bool findEdge = false;
+                for (auto it = vertex->incidentEdges[j]->faceId.begin(); it != vertex->incidentEdges[j]->faceId.end(); it++) {
+                    if ((*it) == faceId) {
+                        Vertex* v2 = vertex->incidentEdges[j]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[j]->vertexe2 : vertex->incidentEdges[j]->vertexe1;
+                        Edge* tmp = vertex->incidentEdges[i + 1];
+                        vertex->incidentEdges[i + 1] = vertex->incidentEdges[j];
+                        vertex->incidentEdges[j] = tmp;
+                        vertex->incidentVertexes[i + 1] = v2;
+                        findEdge = true;
+                        break;
+                    }
+                }
+                if (findEdge) {
+                    break;
+                }
+                
+                
+            }
         }
+        vertex->incidentVertexes[n-1] = vertex->incidentEdges[n-1]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[n - 1]->vertexe2 : vertex->incidentEdges[n - 1]->vertexe1;
+
     }
 
     /*        for (auto edgeIt = (*it)->incidentEdges.begin(); edgeIt != (*it)->incidentEdges.end(); edgeIt++) {
@@ -1933,7 +1987,7 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vecto
 
     */      //先找这个点所在的全部面
     //第一个面包含第一条和第二条边
-    for (auto faceIt = vertex->incidentEdges[0]->faceId.begin(); faceIt != vertex->incidentEdges[0]->faceId.end(); faceIt++) {
+/*    for (auto faceIt = vertex->incidentEdges[0]->faceId.begin(); faceIt != vertex->incidentEdges[0]->faceId.end(); faceIt++) {
         for (auto edgeIt = faces[*faceIt]->edges.begin(); edgeIt != faces[*faceIt]->edges.end(); edgeIt++) {
             if ((*edgeIt)->edgeId == vertex->incidentEdges[1]->edgeId) {
                 incidentFaces.push_back(faces[*faceIt]);
@@ -1955,7 +2009,7 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vecto
             }
         }
     }
-
+*/
     //找到对应的对角度数
     for (auto faceIt = incidentFaces.begin(); faceIt != incidentFaces.end(); faceIt++) {
         //先找到对边
@@ -1976,125 +2030,140 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vecto
     }
     //对每个相邻点进行检测（假设把（it，neighborV）压缩到neighborV），检测新的边是否满足nld条件
     //如果当前点是已经是typeI了，那么选择更小的eph作为要压缩的情况
-    for (int i = 0; i < n; i++) { //i是要压缩到的点
-        Vertex* neighborV = vertex->incidentEdges[i]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[i]->vertexe2 : vertex->incidentEdges[i]->vertexe1;
-        bool sat = true;
-        //检测相邻的边线
-        int firstIndex = (i + 1) % n;
-        Vertex* v0 = vertex->incidentEdges[firstIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[firstIndex]->vertexe2 : vertex->incidentEdges[firstIndex]->vertexe1;
-        int secondIndex = (i + 2) % n;
-        Vertex* v1 = vertex->incidentEdges[secondIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[secondIndex]->vertexe2 : vertex->incidentEdges[secondIndex]->vertexe1;
-        float lengthV1 = glm::distance(neighborV->position, v1->position);
-        float length01 = glm::distance(v0->position, v1->position);
+    if (!notEqual) {
+        for (int i = 0; i < n; i++) { //i是要压缩到的点
+            Vertex* neighborV = vertex->incidentEdges[i]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[i]->vertexe2 : vertex->incidentEdges[i]->vertexe1;
+            bool sat = true;
+            //检测相邻的边线
+            int firstIndex = (i + 1) % n;
+            Vertex* v0 = vertex->incidentEdges[firstIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[firstIndex]->vertexe2 : vertex->incidentEdges[firstIndex]->vertexe1;
+            int secondIndex = (i + 2) % n;
+            Vertex* v1 = vertex->incidentEdges[secondIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[secondIndex]->vertexe2 : vertex->incidentEdges[secondIndex]->vertexe1;
+            float lengthV1 = glm::distance(neighborV->position, v1->position);
+            float length01 = glm::distance(v0->position, v1->position);
 
-        float cos0 = glm::dot((neighborV->position - v1->position), (v0->position - v1->position)) / lengthV1 / length01;
-        if (subtendedAngles[firstIndex] == -5) {    //没有外对角，则判断内对角
-            if (cos0 < -0.000001) {    //不满足条件
-                continue;
-            }
-        }
-        else {
-            float sinj = sqrt(1 - subtendedAngles[firstIndex] * subtendedAngles[firstIndex]);
-            float sin = sqrt(1 - cos0 * cos0);
-            float sinSum = sinj * cos0 + subtendedAngles[firstIndex] * sin;
-            if (sinSum < 0.00001) {
-                continue;
-            }
-        }
-
-        firstIndex = (i + n - 1) % n;
-        v0 = vertex->incidentEdges[firstIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[firstIndex]->vertexe2 : vertex->incidentEdges[firstIndex]->vertexe1;
-        secondIndex = (i + n - 2) % n;
-        v1 = vertex->incidentEdges[secondIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[secondIndex]->vertexe2 : vertex->incidentEdges[secondIndex]->vertexe1;
-        lengthV1 = glm::distance(neighborV->position, v1->position);
-        length01 = glm::distance(v0->position, v1->position);
-
-        cos0 = glm::dot((neighborV->position - v1->position), (v0->position - v1->position)) / lengthV1 / length01;
-        if (subtendedAngles[firstIndex] == -5) {    //没有外对角，则判断内对角
-            if (cos0 < -0.000001) {    //不满足条件
-                continue;
-            }
-        }
-        else {
-            float sinj = sqrt(1 - subtendedAngles[firstIndex] * subtendedAngles[firstIndex]);
-            float sin = sqrt(1 - cos0 * cos0);
-            float sinSum = sinj * cos0 + subtendedAngles[firstIndex] * sin;
-            if (sinSum < 0.00001) {
-                continue;
-            }
-        }
-        //检测非相邻的边线
-        int remainingEdge = n - 2;
-        int j = (i + 1) % n;
-        //TODO：优化算法，下一轮可以使用上一轮的点以及边长
-        while (remainingEdge > 0) {
-            v0 = vertex->incidentEdges[j]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[j]->vertexe2 : vertex->incidentEdges[j]->vertexe1;
-            int nextIndex = (j + 1) % n;
-            v1 = vertex->incidentEdges[nextIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[nextIndex]->vertexe2 : vertex->incidentEdges[nextIndex]->vertexe1;
-            float length1 = glm::distance(neighborV->position, v0->position);
-            float length2 = glm::distance(neighborV->position, v1->position);
-
-            float cos = glm::dot((v1->position - neighborV->position), (v0->position - neighborV->position)) / length1 / length2;
-            if (subtendedAngles[j] == -5) {    //没有外对角，则判断内对角
-                if (cos < -0.000001) {    //不满足条件
-                    sat = false;
-                    break;
+            float cos0 = glm::dot((neighborV->position - v1->position), (v0->position - v1->position)) / lengthV1 / length01;
+            if (subtendedAngles[firstIndex] == -5) {    //没有外对角，则判断内对角
+                if (cos0 < -0.000001) {    //不满足条件
+                    continue;
                 }
-
             }
             else {
-                float sinj = sqrt(1 - subtendedAngles[j] * subtendedAngles[j]);
-                float sin = sqrt(1 - cos * cos);
-                float sinSum = sinj * cos + subtendedAngles[j] * sin;
+                float sinj = sqrt(1 - subtendedAngles[firstIndex] * subtendedAngles[firstIndex]);
+                float sin = sqrt(1 - cos0 * cos0);
+                float sinSum = sinj * cos0 + subtendedAngles[firstIndex] * sin;
+                if (sinSum < 0.00001) {
+                    continue;
+                }
+            }
+
+            firstIndex = (i + n - 1) % n;
+            v0 = vertex->incidentEdges[firstIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[firstIndex]->vertexe2 : vertex->incidentEdges[firstIndex]->vertexe1;
+            secondIndex = (i + n - 2) % n;
+            v1 = vertex->incidentEdges[secondIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[secondIndex]->vertexe2 : vertex->incidentEdges[secondIndex]->vertexe1;
+            lengthV1 = glm::distance(neighborV->position, v1->position);
+            length01 = glm::distance(v0->position, v1->position);
+
+            cos0 = glm::dot((neighborV->position - v1->position), (v0->position - v1->position)) / lengthV1 / length01;
+            if (subtendedAngles[firstIndex] == -5) {    //没有外对角，则判断内对角
+                if (cos0 < -0.000001) {    //不满足条件
+                    continue;
+                }
+            }
+            else {
+                float sinj = sqrt(1 - subtendedAngles[firstIndex] * subtendedAngles[firstIndex]);
+                float sin = sqrt(1 - cos0 * cos0);
+                float sinSum = sinj * cos0 + subtendedAngles[firstIndex] * sin;
+                if (sinSum < 0.00001) {
+                    continue;
+                }
+            }
+            //检测非相邻的边线
+            int remainingEdge = n - 2;
+            int j = (i + 1) % n;
+            //TODO：优化算法，下一轮可以使用上一轮的点以及边长
+            while (remainingEdge > 0) {
+                v0 = vertex->incidentEdges[j]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[j]->vertexe2 : vertex->incidentEdges[j]->vertexe1;
+                int nextIndex = (j + 1) % n;
+                v1 = vertex->incidentEdges[nextIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[nextIndex]->vertexe2 : vertex->incidentEdges[nextIndex]->vertexe1;
+                float length1 = glm::distance(neighborV->position, v0->position);
+                float length2 = glm::distance(neighborV->position, v1->position);
+
+                float cos = glm::dot((v1->position - neighborV->position), (v0->position - neighborV->position)) / length1 / length2;
+                if (subtendedAngles[j] == -5) {    //没有外对角，则判断内对角
+                    if (cos < -0.000001) {    //不满足条件
+                        sat = false;
+                        break;
+                    }
+
+                }
+                else {
+                    float sinj = sqrt(1 - subtendedAngles[j] * subtendedAngles[j]);
+                    float sin = sqrt(1 - cos * cos);
+                    float sinSum = sinj * cos + subtendedAngles[j] * sin;
+                    if (sinSum < 0.00001) {
+                        sat = false;
+                        break;
+                    }
+                }
+                j++;
+                j %= n;
+                remainingEdge--;
+            }
+            if (!sat) {
+                continue;
+            }
+
+            //检测新生成的边
+            int newEdge = n - 2;
+            j = (i + 2) % n;
+            Vertex* v2;
+            while (newEdge > 0) {
+                int preIndex = (j + n - 1) % n;
+                v0 = vertex->incidentEdges[preIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[preIndex]->vertexe2 : vertex->incidentEdges[preIndex]->vertexe1;
+                v1 = vertex->incidentEdges[j]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[j]->vertexe2 : vertex->incidentEdges[j]->vertexe1;
+                int nextIndex = (j + 1) % n;
+                v2 = vertex->incidentEdges[nextIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[nextIndex]->vertexe2 : vertex->incidentEdges[nextIndex]->vertexe1;
+
+                float lengthV0 = glm::distance(neighborV->position, v0->position);
+                //            float lengthV1 = glm::distance(neighborV->position, v1->position);
+                float lengthV2 = glm::distance(neighborV->position, v2->position);
+                float length01 = glm::distance(v0->position, v1->position);
+                float length12 = glm::distance(v1->position, v2->position);
+
+                float cos0 = glm::dot((v1->position - v0->position), (neighborV->position - v0->position)) / lengthV0 / length01;
+                float cos2 = glm::dot((v1->position - v2->position), (neighborV->position - v2->position)) / lengthV2 / length12;
+                float sin0 = sqrt(1 - cos0 * cos0);
+                float sin2 = sqrt(1 - cos2 * cos2);
+                float sinSum = sin0 * cos2 + cos0 * sin2;
                 if (sinSum < 0.00001) {
                     sat = false;
                     break;
                 }
+                j++;
+                j %= n;
+                newEdge--;
             }
-            j++;
-            j %= n;
-            remainingEdge--;
-        }
-        if (!sat) {
-            continue;
-        }
-        
-        //检测新生成的边
-        int newEdge = n - 2;
-        j = (i + 2) % n;
-        Vertex* v2;
-        while (newEdge > 0) {
-            int preIndex = (j + n - 1) % n;
-            v0 = vertex->incidentEdges[preIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[preIndex]->vertexe2 : vertex->incidentEdges[preIndex]->vertexe1;
-            v1 = vertex->incidentEdges[j]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[j]->vertexe2 : vertex->incidentEdges[j]->vertexe1;
-            int nextIndex = (j + 1) % n;
-            v2 = vertex->incidentEdges[nextIndex]->vertexe1->vertexId == vertex->vertexId ? vertex->incidentEdges[nextIndex]->vertexe2 : vertex->incidentEdges[nextIndex]->vertexe1;
-            
-            float lengthV0 = glm::distance(neighborV->position, v0->position);
-//            float lengthV1 = glm::distance(neighborV->position, v1->position);
-            float lengthV2 = glm::distance(neighborV->position, v2->position);
-            float length01 = glm::distance(v0->position, v1->position);
-            float length12 = glm::distance(v1->position, v2->position);
-
-            float cos0 = glm::dot((v1->position - v0->position), (neighborV->position - v0->position)) / lengthV0 / length01;
-            float cos2 = glm::dot((v1->position - v2->position), (neighborV->position - v2->position)) / lengthV2 / length12;
-            float sin0 = sqrt(1 - cos0 * cos0);
-            float sin2 = sqrt(1 - cos2 * cos2);
-            float sinSum = sin0 * cos2 + cos0 * sin2;
-            if (sinSum < 0.00001) {
-                sat = false;
-                break;
+            if (!sat) {
+                continue;
             }
-            j++;
-            j %= n;
-            newEdge--;
+            else {
+                glm::mat4 QSum = vertex->Q + neighborV->Q;
+                glm::vec4 v4 = glm::vec4(neighborV->position, 1);
+                glm::vec4 temp = v4 * QSum;
+                float res = glm::dot(v4, temp);
+                if (vertex->eph > res) {
+                    vertex->eph = res;
+                    vertex->e = vertex->incidentEdges[i];
+                    vertex->typeI = true;
+                    vertex->eIndex = i;
+                }
+            }
         }
-        if (!sat) {
-            continue;
-        }
-        else {
-            glm::mat4 QSum = vertex->Q + neighborV->Q;
-            glm::vec4 v4 = glm::vec4(neighborV->position, 1);
+    }else {//找到最小的e
+        for (int i = 0; i < n; i++) {
+            glm::mat4 QSum = vertex->Q + vertex->incidentVertexes[i]->Q;
+            glm::vec4 v4 = glm::vec4(vertex->incidentVertexes[i]->position, 1);
             glm::vec4 temp = v4 * QSum;
             float res = glm::dot(v4, temp);
             if (vertex->eph > res) {
@@ -2105,6 +2174,7 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vecto
             }
         }
     }
+    
     if (vertex->typeI == true) {
         return true;
     }
@@ -2118,6 +2188,9 @@ void Mesh::findTypeIAndTypeII(){
     std::vector<Face*> incidentFaces;
     std::vector<float> subtendedAngles;
     for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
+        if ((*it)->vertexId == 174) {
+            printf("debug");
+        }
         if (!isTypeI(*it, incidentFaces, subtendedAngles)) {
             isTypeII(*it, incidentFaces, subtendedAngles);
         }
@@ -2129,6 +2202,9 @@ void Mesh::findTypeIAndTypeII(){
 bool Mesh::isTypeII(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles){
     int edgeCount = vertex->incidentEdges.size();
     int faceCount = incidentFaces.size();
+    if (edgeCount != faceCount) {
+        return false;
+    }
     for (int i = 0; i < edgeCount; i++) {//对第i条边检查
         Vertex* v1 = vertex->incidentVertexes[i];
         int nextIndex = (i + 1) % edgeCount;
@@ -2201,7 +2277,7 @@ void Mesh::simplification(float scale){
         vertexQueue.pop_back();
         Edge* contractEdge = removeVertex->e;
         if (contractEdge == nullptr) {//找第一个相邻点来压缩
-
+            printf("debug");
         }
         Vertex* resultVertex = contractEdge->vertexe1->vertexId == removeVertex->vertexId ? contractEdge->vertexe2 : contractEdge->vertexe1;
         resultVertex->Q += removeVertex->Q;
