@@ -9,23 +9,23 @@ class Edge;
 
 class Vertex {
 public:
-    glm::vec3 position;
-    int vertexId;
+    glm::vec3 position;     //三维的向量，用来存储点的坐标
+    int vertexId;           //存储点在点集中的ID
     glm::mat4 Q;
     float eph = 0x7f7fffff;
     int lambda = 0;
-    bool deleted = false;
-    std::vector<Edge*> incidentEdges;
-    std::vector<Vertex*> incidentVertexes;
+    bool deleted = false;   //判断在生成DM时是否需要删除
+    std::vector<Edge*> incidentEdges;       //储存与该点连接的边
+    std::vector<Vertex*> incidentVertexes;  //储存与该点有边相连的点
     Edge* e = nullptr;
-    int eIndex = -1;    //e在incidentEdges的序号
+    int eIndex = -1;        //e在incidentEdges的序号
     bool typeI = false;
     bool typeII = false;
 public:
-    Vertex();
-    Vertex(float x, float y, float z);
-    void init(glm::vec3& p);
-    void setId(int id);
+    Vertex();               //不赋予坐标，仅初始化编号为-1
+    Vertex(float x, float y, float z);  //创建新的坐标为(x,y,z)编号初始化为-1的点
+    void init(glm::vec3& p);            //初始化点的坐标或者给点的坐标赋予新的值
+    void setId(int id);                 //设置点的ID
     ~Vertex();
 };
 

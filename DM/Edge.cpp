@@ -6,33 +6,7 @@ Edge::Edge() {
 
 Edge::~Edge() {
 }
-/*
-void Edge::constructCe(double rhoV, double rhoE) {
-	//	if (vertexe1.position - vertexe2.position != glm::vec3(0, 0, 0)) {	应该不会出现向量为0的情况
-	glm::vec3 normal = glm::normalize(vertexe1.position - vertexe2.position);
-	glm::vec3 rhoVVector = glm::vec3(rhoV, rhoV, rhoV) * normal;
-	glm::vec3 rhoEVector = glm::vec3(rhoE, rhoE, rhoE) * normal;
-	glm::vec3 pStart = glm::vec3(0, 0, 0);
-	pStart = pStart + vertexe1.position + rhoVVector;
-	Ce.push_back(pStart);
-	//判断该边是否是最短的边，是否可以容纳两个点
-	if (length > 2 * rhoV) {
-		glm::vec3 pEnd = glm::vec3(0, 0, 0);
-		pEnd = pEnd + vertexe2.position - rhoVVector;
-		Ce.push_back(pEnd);
 
-		int pCount = (length - 2 * rhoV) / rhoE;
-		for (int i = 1; i <= pCount; i++) {
-			glm::vec3 p = glm::vec3(0, 0, 0);
-			p += pStart;
-			for (int j = 0; j < i; j++) {
-				p += rhoEVector;
-			}
-			Ce.push_back(p);
-		}
-	}
-}
-*/
 void Edge::constructCe(double rhoV, double rhoE) {
 	float rhoVPart = rhoV / length;
 	float rhoEPart = rhoE / length;
@@ -65,17 +39,16 @@ void Edge::constructCe(double rhoV, double rhoE) {
 }
 
 
-glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {
+glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1，v2为区间的两个端点
 	double len1 = glm::distance(v1, vertexe1->position);
 	double len2 = glm::distance(v2, vertexe1->position);
 	double part1 = len1 / length;	//v1和v2与起点距离在总长度的占比
 	double part2 = len2 / length;
 	if (part2 > 1 || part1 > 1) {
-		printf("debug");
+		printf("区间端点超过线段端点");
 	}
-	if (edgeId == 5588) {
-		printf("debug");
-	}
+
+
 	double center = (part1 + part2) / 2;
 	
 	//glm::vec3 normal = glm::normalize(vertexe2->position - vertexe1->position);
