@@ -675,10 +675,7 @@ bool Mesh::saveOBJ(const char* fileName)
 {
     FILE* fp = nullptr;
     int err = fopen_s(&fp, fileName, "w");
-    if (fp == nullptr) {
-        return false;
-    }
-    if (err != 0) {
+    if (fp == nullptr || err != 0) {
         return false;
     }
     int vertexCount = vertexes.size();
@@ -716,38 +713,41 @@ bool Mesh::saveSTLASCII(const char *fileName) {
 
     fprintf(fp, "%s\n", fileInf);
 
+    int totalFace = faces.size();
+    for (int i = 0; i < totalFace; i++) {
+        if (faces[i]->isMesh == true) {
+            for (auto it = faces[i]->children.begin(); it != faces[i]->children.end(); it++) {
+                glm::vec3 v1 = (*((*it)->vertexs.begin()))->position;
+                float v1x = v1.x;
+                float v1y = v1.y;
+                float v1z = v1.z;
 
-    for (int i = 0; i < faceNum; i++) {
-        glm::vec3 v1 = (*(faces[i]->vertexs.begin()))->position;
-        float v1x = v1.x;
-        float v1y = v1.y;
-        float v1z = v1.z;
+                glm::vec3 v2 = (*(++(*it)->vertexs.begin()))->position;
+                float v2x = v2.x;
+                float v2y = v2.y;
+                float v2z = v2.z;
 
-        glm::vec3 v2 = (*(++faces[i]->vertexs.begin()))->position;
-        float v2x = v2.x;
-        float v2y = v2.y;
-        float v2z = v2.z;
+                glm::vec3 v3 = (*(++(++(*it)->vertexs.begin())))->position;
+                float v3x = v3.x;
+                float v3y = v3.y;
+                float v3z = v3.z;
 
-        glm::vec3 v3 = (*(++(++faces[i]->vertexs.begin())))->position;
-        float v3x = v3.x;
-        float v3y = v3.y;
-        float v3z = v3.z;
+                
+                float nx = (v1y - v3y) * (v2z - v3z) - (v1z - v3z) * (v2y - v3y);
+                float ny = (v1z - v3z) * (v2x - v3x) - (v2z - v3z) * (v1x - v3x);
+                float nz = (v1x - v3x) * (v2y - v3y) - (v2x - v3x) * (v1y - v3y);
 
-
-        float nx = (v1y - v3y) * (v2z - v3z) - (v1z - v3z) * (v2y - v3y);
-        float ny = (v1z - v3z) * (v2x - v3x) - (v2z - v3z) * (v1x - v3x);
-        float nz = (v1x - v3x) * (v2y - v3y) - (v2x - v3x) * (v1y - v3y);
-
-        float nxyz = sqrt(nx * nx + ny * ny + nz * nz);
-
-        fprintf(fp, "facet normal %f %f %f\n", nx / nxyz, ny / nxyz, nz / nxyz);
-        fprintf(fp, "outer loop\n");
-        fprintf(fp, "vertex %f %f %f\n", v1x, v1y, v1z);
-        fprintf(fp, "vertex %f %f %f\n", v2x, v2y, v2z);
-        fprintf(fp, "vertex %f %f %f\n", v3x, v3y, v3z);
-        fprintf(fp, "endloop\n");
-        fprintf(fp, "endfacet\n");
-
+                float nxyz = sqrt(nx * nx + ny * ny + nz * nz);
+                //fprintf(fp, "facet normal %f %f %f\n", (*it)->normal.x, (*it) -> normal.y, (*it)->normal.z);
+                fprintf(fp, "facet normal %f %f %f\n", nx / nxyz, ny / nxyz, nz / nxyz);
+                fprintf(fp, "outer loop\n");
+                fprintf(fp, "vertex %f %f %f\n", v1x, v1y, v1z);
+                fprintf(fp, "vertex %f %f %f\n", v2x, v2y, v2z);
+                fprintf(fp, "vertex %f %f %f\n", v3x, v3y, v3z);
+                fprintf(fp, "endloop\n");
+                fprintf(fp, "endfacet\n");
+            }
+        }
     }
     snprintf(fileInf, len + 10, "endsolid %s", fileName);
     fprintf(fp, "%s\n", fileInf);
@@ -778,6 +778,7 @@ bool Mesh::saveSTLBinary(const char * fileName) {
     }
     printf("origin: %d\n", faceNum);
     printf("current: %d\n", count);
+
     FILE* fp = nullptr;
     int err = fopen_s(&fp, fileName, "wb");
     if (fp == nullptr) {
