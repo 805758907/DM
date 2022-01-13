@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClCompile Include="Edge.cpp" />
     <ClCompile Include="Face.cpp" />
+    <ClCompile Include="hash.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Vertex.cpp" />
@@ -156,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="Edge.h" />
     <ClInclude Include="Face.h" />
+    <ClInclude Include="hash.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
