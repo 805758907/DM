@@ -675,10 +675,7 @@ bool Mesh::saveOBJ(const char* fileName)
 {
     FILE* fp = nullptr;
     int err = fopen_s(&fp, fileName, "w");
-    if (fp == nullptr) {
-        return false;
-    }
-    if (err != 0) {
+    if (fp == nullptr || err != 0) {
         return false;
     }
     int vertexCount = vertexes.size();
@@ -692,62 +689,65 @@ bool Mesh::saveOBJ(const char* fileName)
         if (faces[i]->isMesh == true) {
             for (auto it = faces[i]->children.begin(); it != faces[i]->children.end(); it++) {
                 if ((*it)->deleted == false) {
-                    fprintf(fp, "f %d %d %d\n", (*it)->vertexs[0]->vertexId+1, (*it)->vertexs[1]->vertexId+1, (*it)->vertexs[2]->vertexId+1);
+                    fprintf(fp, "f %d %d %d\n", (*it)->vertexs[0]->vertexId + 1, (*it)->vertexs[1]->vertexId + 1, (*it)->vertexs[2]->vertexId + 1);
                 }
             }
         }
     }
 }
 
-bool Mesh::saveSTLASCII(const char *fileName) {
+bool Mesh::saveSTLASCII(const char* fileName) {
 
-    char *fileInf = new char[200];
+    char* fileInf = new char[200];
     int len = 0;
     while (fileName[len] != '\0') {
         len++;
     }
-    snprintf(fileInf,len+7, "solid %s", fileName);
+    snprintf(fileInf, len + 7, "solid %s", fileName);
     FILE* fp = nullptr;
     int err = fopen_s(&fp, fileName, "w");
 
-    if (err != 0|| fp == nullptr) {
+    if (err != 0 || fp == nullptr) {
         return false;
     }
 
     fprintf(fp, "%s\n", fileInf);
 
+    int totalFace = faces.size();
+    for (int i = 0; i < totalFace; i++) {
+        if (faces[i]->isMesh == true) {
+            for (auto it = faces[i]->children.begin(); it != faces[i]->children.end(); it++) {
+                glm::vec3 v1 = (*((*it)->vertexs.begin()))->position;
+                float v1x = v1.x;
+                float v1y = v1.y;
+                float v1z = v1.z;
 
-    for (int i = 0; i < faceNum; i++) {
-        glm::vec3 v1 = (*(faces[i]->vertexs.begin()))->position;
-        float v1x = v1.x;
-        float v1y = v1.y;
-        float v1z = v1.z;
+                glm::vec3 v2 = (*(++(*it)->vertexs.begin()))->position;
+                float v2x = v2.x;
+                float v2y = v2.y;
+                float v2z = v2.z;
 
-        glm::vec3 v2 = (*(++faces[i]->vertexs.begin()))->position;
-        float v2x = v2.x;
-        float v2y = v2.y;
-        float v2z = v2.z;
-
-        glm::vec3 v3 = (*(++(++faces[i]->vertexs.begin())))->position;
-        float v3x = v3.x;
-        float v3y = v3.y;
-        float v3z = v3.z;
+                glm::vec3 v3 = (*(++(++(*it)->vertexs.begin())))->position;
+                float v3x = v3.x;
+                float v3y = v3.y;
+                float v3z = v3.z;
 
 
-        float nx = (v1y - v3y) * (v2z - v3z) - (v1z - v3z) * (v2y - v3y);
-        float ny = (v1z - v3z) * (v2x - v3x) - (v2z - v3z) * (v1x - v3x);
-        float nz = (v1x - v3x) * (v2y - v3y) - (v2x - v3x) * (v1y - v3y);
+                float nx = (v1y - v3y) * (v2z - v3z) - (v1z - v3z) * (v2y - v3y);
+                float ny = (v1z - v3z) * (v2x - v3x) - (v2z - v3z) * (v1x - v3x);
+                float nz = (v1x - v3x) * (v2y - v3y) - (v2x - v3x) * (v1y - v3y);
 
-        float nxyz = sqrt(nx * nx + ny * ny + nz * nz);
-
-        fprintf(fp, "facet normal %f %f %f\n", nx / nxyz, ny / nxyz, nz / nxyz);
-        fprintf(fp, "outer loop\n");
-        fprintf(fp, "vertex %f %f %f\n", v1x, v1y, v1z);
-        fprintf(fp, "vertex %f %f %f\n", v2x, v2y, v2z);
-        fprintf(fp, "vertex %f %f %f\n", v3x, v3y, v3z);
-        fprintf(fp, "endloop\n");
-        fprintf(fp, "endfacet\n");
-
+                float nxyz = sqrt(nx * nx + ny * ny + nz * nz);
+                //fprintf(fp, "facet normal %f %f %f\n", (*it)->normal.x, (*it) -> normal.y, (*it)->normal.z);
+                fprintf(fp, "facet normal %f %f %f\n", nx / nxyz, ny / nxyz, nz / nxyz);
+                fprintf(fp, "outer loop\n");
+                fprintf(fp, "vertex %f %f %f\n", v1x, v1y, v1z);
+                fprintf(fp, "vertex %f %f %f\n", v2x, v2y, v2z);
+                fprintf(fp, "vertex %f %f %f\n", v3x, v3y, v3z);
+                fprintf(fp, "endloop\n");
+                fprintf(fp, "endfacet\n");
+            }
+        }
     }
     snprintf(fileInf, len + 10, "endsolid %s", fileName);
     fprintf(fp, "%s\n", fileInf);
@@ -757,7 +757,7 @@ bool Mesh::saveSTLASCII(const char *fileName) {
     return true;
 }
 
-bool Mesh::saveSTLBinary(const char * fileName) {
+bool Mesh::saveSTLBinary(const char* fileName) {
 
     //char *saveName = new char[100];
     //sprintf(saveName, "%s%s.stl", pathName, fileName);
@@ -778,6 +778,7 @@ bool Mesh::saveSTLBinary(const char * fileName) {
     }
     printf("origin: %d\n", faceNum);
     printf("current: %d\n", count);
+
     FILE* fp = nullptr;
     int err = fopen_s(&fp, fileName, "wb");
     if (fp == nullptr) {
@@ -786,7 +787,7 @@ bool Mesh::saveSTLBinary(const char * fileName) {
     if (err != 0) {
         return false;
     }
-    float *data = new float[12];
+    float* data = new float[12];
 
     fwrite(partName, sizeof(char), 80, fp);
     //fwrite(&faceNum, sizeof(int), 1, fp);
@@ -815,24 +816,24 @@ bool Mesh::saveSTLBinary(const char * fileName) {
                 }
             }
         }
-/*        data[0] = faces[i]->normal.x;
-        data[1] = faces[i]->normal.y;
-        data[2] = faces[i]->normal.z;
+        /*        data[0] = faces[i]->normal.x;
+                data[1] = faces[i]->normal.y;
+                data[2] = faces[i]->normal.z;
 
-        data[3] = faces[i]->vertexs[0]->position.x;
-        data[4] = faces[i]->vertexs[0]->position.y;
-        data[5] = faces[i]->vertexs[0]->position.z;
-        data[6] = faces[i]->vertexs[1]->position.x;
-        data[7] = faces[i]->vertexs[1]->position.y;
-        data[8] = faces[i]->vertexs[1]->position.z;
-        data[9] = faces[i]->vertexs[2]->position.x;
-        data[10] = faces[i]->vertexs[2]->position.y;
-        data[11] = faces[i]->vertexs[2]->position.z;
+                data[3] = faces[i]->vertexs[0]->position.x;
+                data[4] = faces[i]->vertexs[0]->position.y;
+                data[5] = faces[i]->vertexs[0]->position.z;
+                data[6] = faces[i]->vertexs[1]->position.x;
+                data[7] = faces[i]->vertexs[1]->position.y;
+                data[8] = faces[i]->vertexs[1]->position.z;
+                data[9] = faces[i]->vertexs[2]->position.x;
+                data[10] = faces[i]->vertexs[2]->position.y;
+                data[11] = faces[i]->vertexs[2]->position.z;
 
-        fwrite(data, sizeof(float), 12, fp);
-        fwrite(faces[i]->buf, sizeof(char), 2, fp);
+                fwrite(data, sizeof(float), 12, fp);
+                fwrite(faces[i]->buf, sizeof(char), 2, fp);
 
-*/
+        */
     }
 
     fclose(fp);
