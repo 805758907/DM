@@ -30,6 +30,9 @@
     <ClCompile Include="Edge.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="hash.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Face.h">
@@ -42,6 +45,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Edge.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="hash.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
