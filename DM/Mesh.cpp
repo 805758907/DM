@@ -969,10 +969,10 @@ void Mesh::computeParameter(){
 void Mesh::generateDM(){
     printf("edges: %d\n", edges.size());
     computeParameter();
-/*    for (auto it = edges.begin(); it != edges.end(); it++) {
+    for (auto it = edges.begin(); it != edges.end(); it++) {
         (*it)->constructCe(rhoV, rhoE);
     } 
-*/
+
 
     findAllNLDEdges();
     while (!NLDEdges.empty()) {
@@ -993,9 +993,6 @@ void Mesh::generateDM(){
 
     int count = 0;
     for (auto it = edges.begin(); it != edges.end(); it++) {
-        if ((*it)->vertexe1->vertexId == 4972 && (*it)->vertexe2->vertexId == 4974) {
-            printf("debug");
-        }
         if (isNLD(*it)) {
             count++;
         }
@@ -1010,11 +1007,7 @@ void Mesh::generateDM(){
 * 遍历这四个面的所有边，翻NLD，把不能翻转的加入栈中
 */
 
-void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
-/*    if (edge->edgeId == 5314) {
-        printf("debug");
-    }
-*/    
+void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB   
     Vertex* vertexA = edge->vertexe1;
     Vertex* vertexB = edge->vertexe2;
     if (edge->faceId.size() == 2) {
@@ -1240,8 +1233,8 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
         //找到e ∈ E
         Edge* parentEdge = edge->parent;
-        //glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
-        glm::vec3 splitPosition = parentEdge->getSplitePosition2(p1, p2, rhoV, rhoE, &m_hash_point);
+        glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
+        //glm::vec3 splitPosition = parentEdge->getSplitePosition2(p1, p2, rhoV, rhoE, &m_hash_point);
 
         //printf("split edge %d;", edge->edgeId, splitPosition.x, splitPosition.y, splitPosition.z);
 
@@ -1400,8 +1393,8 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
         //找到e ∈ E
         Edge* parentEdge = edge->parent;
-        //glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
-        glm::vec3 splitPosition = parentEdge->getSplitePosition2(p1, p2, rhoV, rhoE, &m_hash_point);
+        glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
+        //glm::vec3 splitPosition = parentEdge->getSplitePosition2(p1, p2, rhoV, rhoE, &m_hash_point);
 
 
         Face* parentFaceOfABC = getParentFace(parentEdge, faceABC);
@@ -1597,9 +1590,6 @@ void Mesh::findAllNLDEdges() {
 }
 
 void Mesh::flipAllNLDEdgeInFace(Face* face) {
-    if (face->faceId == 3886) {
-        printf("debug");
-    }
 begin_process:
     std::list<int> visitedEdge;
     for (auto childIt = face->children.begin(); childIt != face->children.end(); childIt++) {
@@ -1620,10 +1610,6 @@ begin_process:
             }
             if (!visited && ((*edgeIt)->edgeId >= 0)) {
                 visitedEdge.insert(it, (*edgeIt)->edgeId);
-                //if (((*edgeIt)->vertexe1->vertexId == 2373 && (*edgeIt)->vertexe2->vertexId == 2378) || ((*edgeIt)->vertexe1->vertexId == 2375 && (*edgeIt)->vertexe2->vertexId == 2376)){
-                if (((*edgeIt)->vertexe1->vertexId == 2109 && (*edgeIt)->vertexe2->vertexId == 2769) || ((*edgeIt)->vertexe1->vertexId == 2768 && (*edgeIt)->vertexe2->vertexId == 2770)) {
-                    printf("debug");
-                }
                 if (isNLD(*edgeIt)) {
                     if ((*edgeIt)->flippable == true) {
                         flipEdge((*edgeIt));
@@ -1636,9 +1622,7 @@ begin_process:
 }
 
 void Mesh::flipEdge(Edge* edgeAB) {
-    /*if (edgeAB->edgeId == 664) {
-        printf("debug");
-    }
+    /*
     printf("flip %d", edgeAB->edgeId);*/
     Vertex* vertexA = edgeAB->vertexe1;
     Vertex* vertexB = edgeAB->vertexe2;

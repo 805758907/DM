@@ -1,5 +1,4 @@
 #include "Edge.h"
-#include "hash.h"
 #include <math.h>
 
 
@@ -112,13 +111,10 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 	}
 }
 
-glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, double rhoE, std::unordered_map<glm::vec3, int, hash_point>* points)
-{	
-	if (edgeId == 4313) {
-		printf("debug");
-	}
+glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, double rhoE, std::unordered_map<glm::vec3, int, hash_point>* points) {	
 	double rhoVPart = rhoV / length;
 	double rhoEPart = rhoE / length;
+
 	double rightRhoVPart = 1 - rhoVPart;	//Ceµã¼¯×îÓÒ²àµÄµã
 	
 	
@@ -163,7 +159,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 		target = rightRhoVPart;
 		position = vertexe2->position - rhoVPartVection;
 		
-		while (target >= rightRhoVPart) {
+		while (target >= rhoVPart) {
 			//¿´¿´ÊÇ·ñÄÜÔÚµã¼¯ÖÐÕÒµ½Õâ¸öµã
 			auto it = points->find(position);
 			if (it != points->end()) {	//¸ÃµãÒÑ¾­´æÔÚ£¬¼´ÊÇ±»ÓÃ¹ýµÄ£¬ÔòÕÒÇ°Ò»¸öµã
