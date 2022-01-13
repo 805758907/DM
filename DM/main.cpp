@@ -6,14 +6,14 @@
 
 int main() {
     Mesh mesh;
-    //mesh.readOBJ("../file/building.obj");
-    mesh.readSTL("../file/test.STL");
+    mesh.readOBJ("../file/testObj.obj");
+    //mesh.readSTL("../file/test.STL");
     //mesh.readSTL("../file/eddgtest.STL");
     mesh.generateDM();
 
-    mesh.simplification(0.2);
-    mesh.saveSTLBinary("../file/woct.stl");
-    // mesh.saveOBJ("../file/kkslptest.obj");
+    //mesh.simplification(0.2);
+    //mesh.saveSTLBinary("../file/woct.stl");
+    mesh.saveOBJ("./res/test.obj");
 
 
     return 0;

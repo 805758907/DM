@@ -968,11 +968,13 @@ void Mesh::computeParameter(){
 void Mesh::generateDM(){
     printf("edges: %d\n", edges.size());
     computeParameter();
-    for (auto it = edges.begin(); it != edges.end(); it++) {
+/*    for (auto it = edges.begin(); it != edges.end(); it++) {
         (*it)->constructCe(rhoV, rhoE);
     } 
+*/
+
     findAllNLDEdges();
-   while (!NLDEdges.empty()) {
+    while (!NLDEdges.empty()) {
         Edge* currentEdge = NLDEdges.top();
         NLDEdges.pop();
         if (isNLD(currentEdge)) {
@@ -1237,8 +1239,8 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
         //找到e ∈ E
         Edge* parentEdge = edge->parent;
-        glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
-
+        //glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
+        glm::vec3 splitPosition = parentEdge->getSplitePosition2(p1, p2, rhoV, rhoE, &m_hash_point);
 
         //printf("split edge %d;", edge->edgeId, splitPosition.x, splitPosition.y, splitPosition.z);
 
@@ -1397,7 +1399,9 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
         //找到e ∈ E
         Edge* parentEdge = edge->parent;
-        glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
+        //glm::vec3 splitPosition = parentEdge->getSplitePosition(p1, p2);
+        glm::vec3 splitPosition = parentEdge->getSplitePosition2(p1, p2, rhoV, rhoE, &m_hash_point);
+
 
         Face* parentFaceOfABC = getParentFace(parentEdge, faceABC);
 

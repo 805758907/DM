@@ -3,7 +3,6 @@
 
 #include "Face.h"
 #include "hash.h"
-#include <unordered_map>
 #include <stack>
 
 class Mesh {
