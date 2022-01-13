@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Vertex.h"
+#include "hash.h"
 #include<set>
+#include<unordered_map>
 
 
 class Edge
@@ -25,5 +27,6 @@ public:
 	~Edge();
 	void constructCe(double rhoV, double rhoE);				//用于通过计算得到的rhoV和rhoE值来获取在边上创建Ce点的位置
 	glm::vec3 getSplitePosition(glm::vec3&, glm::vec3&);	//计算获得建立DM时满足LD的分割点（算法二）
+	glm::vec3 getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, double rhoE, std::unordered_map<glm::vec3, int, hash_point>* points);	//直接通过两个参数找到分割点（区间靠近中间的点）
 };
 
