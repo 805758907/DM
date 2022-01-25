@@ -27,7 +27,7 @@ glm::vec3 calNormal(glm::vec3& v1, glm::vec3& v2, glm::vec3& v3) {
 }
 
 //边的比较函数，先比较第一个点（下标最小的点），如果相同再比较第二个点
-bool compare(const Edge* a, const  Edge* b){        
+bool compare(const Edge* a, const  Edge* b) {
     if (a->vertexe1->vertexId != b->vertexe1->vertexId) {
         return a->vertexe1->vertexId < b->vertexe1->vertexId;
     }
@@ -191,7 +191,7 @@ std::pair<float, float> getSplitRegion(float tStart, float tEnd, float tE, float
         if (min2 <= tEnd) {
             return std::pair<float, float>(min2, tEnd);     //三个满足
         }
-        if(max1 >= tStart)
+        if (max1 >= tStart)
             return std::pair<float, float>(tStart, max1);     //两个满足
         if (min1 <= tEnd) {
             return std::pair<float, float>(min1, tEnd);     //两个满足
@@ -223,8 +223,8 @@ std::pair<float, float> getSplitRegion(float tStart, float tEnd, float tE, float
         return std::pair<float, float>(tStart, max2);   //一个满足
     }
     return std::pair<float, float>(tStart, tEnd);   //0个满足
-    
-    
+
+
 
 }
 
@@ -278,7 +278,7 @@ int getIndexOfVertexInFace(Face* face, Vertex* v) {
 bool judgeAntiClockWish(Face* face, Vertex* v1, Vertex* v2) {//v1->v2是逆时针
     int index1 = getIndexOfVertexInFace(face, v1);
     int index2 = getIndexOfVertexInFace(face, v2);
-    
+
     if (index1 < index2) {
         if (index2 - index1 == 1)
             return true;
@@ -293,7 +293,7 @@ bool judgeAntiClockWish(Face* face, Vertex* v1, Vertex* v2) {//v1->v2是逆时�
 }
 
 //旋转pointRotated：以normalFixed作为固定面的法向量，normalRotated为要旋转平面的法向量，edgeNormal作为交线的法向量，startPosition作为交线的起始点
-glm::vec3 rotatePoint(glm::vec3& normalFixed, glm::vec3& normalRotated, glm::vec3& edgeNormal, glm::vec3& startPosition, glm::vec3& pointRotated){
+glm::vec3 rotatePoint(glm::vec3& normalFixed, glm::vec3& normalRotated, glm::vec3& edgeNormal, glm::vec3& startPosition, glm::vec3& pointRotated) {
     float cosAngle = glm::dot(normalFixed, normalRotated);   //都是单位向量
     float angle = acos(cosAngle);                           //旋转的弧度
     glm::vec3 o = glm::normalize(glm::cross(normalFixed, normalRotated));   //判断旋转方向，与交线同向则顺时针旋转；反向则逆时针旋转
@@ -418,7 +418,7 @@ void Mesh::CreateOBJFace(const std::string& line)
     faceNum++;
 
 
-    if (vertIndexEnd < tokenLength -1) {
+    if (vertIndexEnd < tokenLength - 1) {
         Face* face2 = new Face();
         std::vector<Vertex*> vs2;
         vertIndexStart = vertIndexEnd + 1;
@@ -437,7 +437,7 @@ void Mesh::CreateOBJFace(const std::string& line)
         faces.push_back(face2);
         faceNum++;
     }
-    
+
 }
 
 bool VertexBelongToFace(Vertex* v, Face* f) {
@@ -455,7 +455,7 @@ Mesh::Mesh() {
 Mesh::~Mesh() {
 }
 
-bool Mesh::readSTL(const char *fileName) {
+bool Mesh::readSTL(const char* fileName) {
     //判断类型，调用不同的函数来生成
     FILE* fStl = nullptr;
     int err = fopen_s(&fStl, fileName, "r");//r表示只允许对文件进行读取而不能改写文件内容   r+则允许读写
@@ -480,7 +480,7 @@ bool Mesh::readSTL(const char *fileName) {
         return readSTLBinary(fileName);
     }
 
-    
+
 
 }
 
@@ -506,7 +506,7 @@ bool Mesh::readOBJ(const char* fileName)
             case 'v':
                 if (lineCStr[1] == 't')
                 {
-//                    this->uvs.push_back(ParseOBJVec2(line));
+                    //                    this->uvs.push_back(ParseOBJVec2(line));
                 }
                 else if (lineCStr[1] == 'n')
                 {
@@ -515,12 +515,12 @@ bool Mesh::readOBJ(const char* fileName)
                 }
                 else if (lineCStr[1] == ' ' || lineCStr[1] == '\t') {
                     glm::vec3 position = ParseOBJVec3(line);
-                    Vertex * vertex = new Vertex();
+                    Vertex* vertex = new Vertex();
                     vertex->init(position);
                     vertex->setId(vertexes.size());
                     this->vertexes.push_back(vertex);
                 }
-                    
+
                 break;
             case 'f':
                 CreateOBJFace(line);
@@ -535,7 +535,7 @@ bool Mesh::readOBJ(const char* fileName)
     return true;
 }
 
-bool Mesh::readSTLASCII(const char *fileName) {
+bool Mesh::readSTLASCII(const char* fileName) {
     std::ifstream fileSTL(fileName, std::ios::in | std::ios::binary);//in:只读   binary:二进制模式
     char buf[255];
     char end[] = "endsolid";
@@ -573,20 +573,20 @@ bool Mesh::readSTLASCII(const char *fileName) {
 
                 Vertex* vertex = generateNewVertex(p);
                 vs.push_back(vertex);
-/*                int id = findVertexByPoint(p);
-                if (id == -1) {			//没找到，该point是新的
-                    Vertex* vertex = new Vertex();
-                    vertex->init(p);
-                    vertex->setId(vertexId);
-                    m_hash_point[p] = vertexId;
-                    vertexId++;
-                    vertexes.push_back(vertex);
-                    vs.push_back(vertex);
-                }
-                else {
-                    vs.push_back(vertexes[id]);
-                }
-*/
+                /*                int id = findVertexByPoint(p);
+                                if (id == -1) {			//没找到，该point是新的
+                                    Vertex* vertex = new Vertex();
+                                    vertex->init(p);
+                                    vertex->setId(vertexId);
+                                    m_hash_point[p] = vertexId;
+                                    vertexId++;
+                                    vertexes.push_back(vertex);
+                                    vs.push_back(vertex);
+                                }
+                                else {
+                                    vs.push_back(vertexes[id]);
+                                }
+                */
             }
             fileSTL >> buf;     //endloop
             fileSTL >> buf;     //endfacet
@@ -600,7 +600,7 @@ bool Mesh::readSTLASCII(const char *fileName) {
             faceId++;
             faceNum++;
         }
-        
+
     }
     return true;
 }
@@ -642,31 +642,31 @@ bool Mesh::readSTLBinary(const char* fileName) {
 
             Vertex* vertex = generateNewVertex(p);
             vs.push_back(vertex);
-/*          int id = findVertexByPoint(p);
-            if (id == -1) {			//没找到，该point是新的
-                Vertex* vertex = new Vertex();
-                vertex->init(p);
-                vertex->setId(vertexId);
-                m_hash_point[p] = vertexId;
-                vertexId++;
-                vertexes.push_back(vertex);
-                vs.push_back(vertex);
-            }else {
-                vs.push_back(vertexes[id]);
-            }
-*/
+            /*          int id = findVertexByPoint(p);
+                        if (id == -1) {			//没找到，该point是新的
+                            Vertex* vertex = new Vertex();
+                            vertex->init(p);
+                            vertex->setId(vertexId);
+                            m_hash_point[p] = vertexId;
+                            vertexId++;
+                            vertexes.push_back(vertex);
+                            vs.push_back(vertex);
+                        }else {
+                            vs.push_back(vertexes[id]);
+                        }
+            */
         }
-//        start = clock();
+        //        start = clock();
         fread(face->buf, 2, 1, fStl);//读取保留项数据，这一项一般没什么用，这里选择读取是为了移动文件指针
         face->setId(faceId);
         face->setVertex(vs);
         face->children.push_back(face);
-        generateEdgeOfFace(face,true);
+        generateEdgeOfFace(face, true);
 
         faces.push_back(face);
         faceId++;
     }
-    
+
     return true;
 
 }
@@ -865,9 +865,9 @@ Edge* Mesh::findEdgeByPoints(Vertex* v1, Vertex* v2) {
     }
 }
 
-Edge* Mesh::generateEdge(Vertex* v1, Vertex* v2){
+Edge* Mesh::generateEdge(Vertex* v1, Vertex* v2) {
     Vertex* pFirst, * pSecond;
-    
+
     if (v1->vertexId < v2->vertexId) {
         pFirst = v1;
         pSecond = v2;
@@ -898,7 +898,7 @@ Edge* Mesh::generateEdge(Vertex* v1, Vertex* v2){
     return edge;
 }
 
-void Mesh::generateEdgeOfFace(Face* face, bool meshEdge){
+void Mesh::generateEdgeOfFace(Face* face, bool meshEdge) {
     Edge* edge01 = generateEdge(face->vertexs[0], face->vertexs[1]);
     edge01->faceId.insert(face->faceId);
     if (meshEdge) {
@@ -925,7 +925,7 @@ void Mesh::generateEdgeOfFace(Face* face, bool meshEdge){
     face->edges.push_back(edge02);
     face->borders.push_back(edge02);
     double length02 = edge02->length;
-    
+
     //求角度
 //    start = clock();
 //    float cosTheta0 = glm::dot((face->vertexs[1]->position - face->vertexs[0]->position), (face->vertexs[2]->position - face->vertexs[0]->position)) / length01 / length02;
@@ -936,24 +936,24 @@ void Mesh::generateEdgeOfFace(Face* face, bool meshEdge){
     }
     face->angles.push_back(cosTheta0);
     double cosTheta1 = (length01 * length01 + length12 * length12 - length02 * length02) / 2 / length01 / length12;
-//    float cosTheta1 = glm::dot((face->vertexs[0]->position - face->vertexs[1]->position), (face->vertexs[2]->position - face->vertexs[1]->position)) / length01 / length12;
+    //    float cosTheta1 = glm::dot((face->vertexs[0]->position - face->vertexs[1]->position), (face->vertexs[2]->position - face->vertexs[1]->position)) / length01 / length12;
     double sinTheta1 = sqrt(1 - cosTheta1 * cosTheta1);
     if (sinTheta1 < sinThetaMin) {
         sinThetaMin = sinTheta1;
     }
     face->angles.push_back(cosTheta1);
     double cosTheta2 = (length12 * length12 + length02 * length02 - length01 * length01) / 2 / length12 / length02;
-//    float cosTheta2 = glm::dot((face->vertexs[0]->position - face->vertexs[2]->position), (face->vertexs[1]->position - face->vertexs[2]->position)) / length12 / length02;
+    //    float cosTheta2 = glm::dot((face->vertexs[0]->position - face->vertexs[2]->position), (face->vertexs[1]->position - face->vertexs[2]->position)) / length12 / length02;
     double sinTheta2 = sqrt(1 - cosTheta2 * cosTheta2);
     if (sinTheta2 < sinThetaMin) {
         sinThetaMin = sinTheta2;
     }
 
     face->angles.push_back(cosTheta2);
-    
+
 }
 
-void Mesh::computeParameter(){
+void Mesh::computeParameter() {
     float v1 = lMin * sinThetaMin / (0.5 + sinThetaMin);
     float v2 = lMin / 2;
 
@@ -966,13 +966,12 @@ void Mesh::computeParameter(){
     rhoE = 2 * rhoV * sinThetaMin;
 }
 
-void Mesh::generateDM(){
+void Mesh::generateDM() {
     printf("edges: %d\n", edges.size());
     computeParameter();
     for (auto it = edges.begin(); it != edges.end(); it++) {
         (*it)->constructCe(rhoV, rhoE);
-    } 
-
+    }
 
     findAllNLDEdges();
     while (!NLDEdges.empty()) {
@@ -997,7 +996,7 @@ void Mesh::generateDM(){
             count++;
         }
     }
-   printf("NLD:%d\n", count);
+    printf("NLD:%d\n", count);
 }
 
 
@@ -1040,7 +1039,7 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         float angle = acos(cosAngle);                   //旋转的弧度
         glm::vec3 ve = glm::normalize(vertexA->position - vertexB->position); //该边的向量
         glm::vec3 o = glm::normalize(glm::cross(normalABD, normalABC));   //判断旋转方向，与交线同向则顺时针旋转；反向则逆时针旋转
-        if ((o.x >=0 && ve.x < 0) || (o.x <= 0 && ve.x > 0)) {  //反向(因为glm::rotate函数本来就是逆时针旋转的）
+        if ((o.x >= 0 && ve.x < 0) || (o.x <= 0 && ve.x > 0)) {  //反向(因为glm::rotate函数本来就是逆时针旋转的）
             //angle = -angle;
         }
         else {
@@ -1068,7 +1067,7 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         Vertex* pStart = parent->vertexe1;
         Vertex* pEnd = parent->vertexe2;
 
-//        glm::vec4 newVertexCPosition2 = moveBack * trans2 * moveTo * vertexCPosition;
+        //        glm::vec4 newVertexCPosition2 = moveBack * trans2 * moveTo * vertexCPosition;
 
         glm::vec3 center = solveCenterPointOfCircle(vertexA->position, vertexD->position, newVertexCPos);
         float tEnd = getAnotherPoint(vertexB->position, vertexA->position, center);
@@ -1459,11 +1458,11 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
         addNewNonNLDEdge(parentFaceOfABC);
     }
-    
+
 
 }
 
-bool Mesh::isNLD(Edge* edge){
+bool Mesh::isNLD(Edge* edge) {
     edge->flippable = false;
     if (edge->deleted == true || edge->edgeId < 0) {
         return false;
@@ -1477,7 +1476,7 @@ bool Mesh::isNLD(Edge* edge){
         for (int i = 0; i < 3; i++) {
             if (face->vertexs[i]->vertexId != edge->vertexe1->vertexId && face->vertexs[i]->vertexId != edge->vertexe2->vertexId) {
                 top = face->vertexs[i];
- //               cos = face->angles[i];
+                //               cos = face->angles[i];
                 break;
             }
         }
@@ -1701,8 +1700,8 @@ void Mesh::flipEdge(Edge* edgeAB) {
     iter = edgeBC->faceId.find(faceABC->faceId);
     edgeBC->faceId.erase(iter);
 
-    
-    
+
+
     //删除边
     for (auto it = edgeAB->meshFaceId.begin(); it != edgeAB->meshFaceId.end(); it++) {
         addNewNonNLDEdge(faces[*it]);
@@ -1720,7 +1719,7 @@ void Mesh::flipEdge(Edge* edgeAB) {
     faceABC->deleted = true;
     faceABD->deleted = true;
 
-    
+
 }
 
 Face* Mesh::getParentFace(Edge* edge, Face* childFace) {
@@ -1847,7 +1846,7 @@ float Mesh::getAnotherVertexDegreeByEdge(Face* face, Edge* edge) {
 }
 
 
-void Mesh::init(){
+void Mesh::init() {
     //找到每个点的临近点
     for (auto it = edges.begin(); it != edges.end(); it++) {
         if ((*it)->splitted == false && (*it) != NULL && (*it)->vertexe1->vertexId != (*it)->vertexe2->vertexId) {
@@ -1859,14 +1858,14 @@ void Mesh::init(){
             (*it)->vertexe2->incidentVertexes.push_back((*it)->vertexe1);
         }
     }
-    
+
     //计算每个面的方程
     for (auto it = faces.begin(); it != faces.end(); it++) {
         if ((*it)->deleted == false) {
             (*it)->calFormula();
         }
     }
-    
+
     std::unordered_map<int, bool> visitedFace;//STL中的哈希容器
     for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
         //计算每个点的Q矩阵
@@ -1885,6 +1884,38 @@ void Mesh::init(){
 
                 }
             }
+            if ((*edgeIt)->faceId.size() == 1) {
+                auto faceIt = (*edgeIt)->faceId.begin();
+                auto formalface = faces[*faceIt];
+                Face* newface = new Face;
+                glm::vec3 fornormal = (formalface)->normal;
+                glm::vec3 newnormal;
+                if (fornormal.x != 0) {
+                    newnormal.y = newnormal.z = 1;
+                    newnormal.x = -(fornormal.y + fornormal.z) / fornormal.x;
+                }
+                else if (fornormal.y != 0) {
+                    newnormal.x = newnormal.z = 1;
+                    newnormal.y = -(fornormal.x + fornormal.z) / fornormal.y;
+                }
+                else {
+                    newnormal.x = newnormal.y = 1;
+                    newnormal.z = -(fornormal.x + fornormal.y) / fornormal.z;
+                }
+                glm::normalize(newnormal);
+                newface->setNormal(newnormal);
+                newface->vertexs.push_back((*it));
+                newface->calFormula();
+                glm::vec4 formula = newface->formula;
+                for (int i = 0; i < 4; i++) {
+                    for (int j = 0; j < 4; j++) {
+                        (*it)->Q[i][j] += 10000 * formula[i] * formula[j];
+                    }
+                }
+                (*it)->lambda++;
+
+                delete newface;
+            }
         }
         visitedFace.clear();
     }
@@ -1892,7 +1923,6 @@ void Mesh::init(){
 
 bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles) {
     //重新排布incidentEdges，使得相邻两条边在同一三角面上
-
     int n = vertex->incidentEdges.size();
     vertex->incidentVertexes.clear();
     vertex->incidentVertexes.assign(n, nullptr);
@@ -1994,24 +2024,25 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vecto
     //找到对应的对角度数
     if (!notEqual)
         for (auto faceIt = incidentFaces.begin(); faceIt != incidentFaces.end(); faceIt++)
-        {
-            //先找到对边
-            Edge* oppositeEdge = nullptr;
-            for (auto edgeIt = (*faceIt)->edges.begin(); edgeIt != (*faceIt)->edges.end(); edgeIt++) {
-                if ((*edgeIt)->vertexe1->vertexId != vertex->vertexId && (*edgeIt)->vertexe2->vertexId != vertex->vertexId) {
-                    oppositeEdge = (*edgeIt);
-                    break;
+            if ((*faceIt)->deleted == false)
+            {
+                //先找到对边
+                Edge* oppositeEdge = nullptr;
+                for (auto edgeIt = (*faceIt)->edges.begin(); edgeIt != (*faceIt)->edges.end(); edgeIt++) {
+                    if ((*edgeIt)->vertexe1->vertexId != vertex->vertexId && (*edgeIt)->vertexe2->vertexId != vertex->vertexId) {
+                        oppositeEdge = (*edgeIt);
+                        break;
+                    }
+                }
+                // printf_s("\n\n");
+                 //再找到对角度数
+                if (oppositeEdge->faceId.size() < 2) {
+                    subtendedAngles.push_back(-5);
+                }
+                else {
+                    subtendedAngles.push_back(getAnotherVertexDegreeByEdge(*faceIt, oppositeEdge));
                 }
             }
-            // printf_s("\n\n");
-             //再找到对角度数
-            if (oppositeEdge->faceId.size() < 2) {
-                subtendedAngles.push_back(-5);
-            }
-            else {
-                subtendedAngles.push_back(getAnotherVertexDegreeByEdge(*faceIt, oppositeEdge));
-            }
-        }
     //对每个相邻点进行检测（假设把（it，neighborV）压缩到neighborV），检测新的边是否满足nld条件
     //如果当前点是已经是typeI了，那么选择更小的eph作为要压缩的情况
     if (!notEqual) {
@@ -2173,12 +2204,11 @@ void Mesh::findTypeIAndTypeII() {
     std::vector<Face*> incidentFaces;
     std::vector<float> subtendedAngles;
     for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
-        isTypeI(*it, incidentFaces, subtendedAngles);
-        /*if (!isTypeI(*it, incidentFaces, subtendedAngles)) {
-            isTypeII(*it, incidentFaces, subtendedAngles);
-        }*/
         incidentFaces.clear();
         subtendedAngles.clear();
+        if (!isTypeI(*it, incidentFaces, subtendedAngles)) {
+            isTypeII(*it, incidentFaces, subtendedAngles);
+        }
     }
 }
 
@@ -2279,6 +2309,13 @@ void Mesh::simplification(float scale) {
     //开始简化
     while (totalVertexCount > targetVertexCount) {
         //取出最小点
+        vertexQueue.clear();
+        for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
+            if ((*it)->deleted == false) {
+                vertexQueue.push_back(*it);
+            }
+        }
+        make_heap(vertexQueue.begin(), vertexQueue.end(), cmp());
         pop_heap(vertexQueue.begin(), vertexQueue.end(), cmp());
         Vertex* removeVertex = vertexQueue.back();
         int removeVertexId = removeVertex->vertexId;
@@ -2292,27 +2329,28 @@ void Mesh::simplification(float scale) {
         resultVertex->lambda += removeVertex->lambda;
         int incidentCount = removeVertex->incidentVertexes.size();
         //压缩edge，先生成新的面，再更改未删除边的面信息，删除原来的面和边，更改removeVertex的相邻点的情况，计算resultVertex的类型，最后删除点
+        //removeVertex->eIndex表示的是resultVertex
         int nextIndex = (removeVertex->eIndex + 1) % incidentCount;
         int secondIndex = (nextIndex + 1) % incidentCount;
-        Vertex* nextVertex = removeVertex->incidentVertexes[nextIndex];
+        Vertex* nextVertex;
         Vertex* secondVertex;
 
         int newFaceCount = incidentCount - 2;
+        //while循环中只操作与resultVertex没有关联的edge
         while (newFaceCount > 0) {
             //找到原来的面
             Edge* oldEdge = removeVertex->incidentEdges[nextIndex];
             nextVertex = removeVertex->incidentVertexes[nextIndex];
             secondVertex = removeVertex->incidentVertexes[secondIndex];
             Face* oldFace = nullptr;
+
             for (auto it = oldEdge->faceId.begin(); it != oldEdge->faceId.end(); it++) {
                 if (VertexBelongToFace(secondVertex, faces[*it])) {
                     oldFace = faces[*it];
                     break;
                 }
             }
-            Edge* parentEdge = oldEdge->parent;
-            Face* parentFace = getParentFace(parentEdge, oldFace);
-            parentFace->deleteChild(oldFace);
+
             bool antiClockWish = judgeAntiClockWish(oldFace, secondVertex, nextVertex);
             //生成新的面
             Face* newFace = nullptr;
@@ -2322,6 +2360,8 @@ void Mesh::simplification(float scale) {
             else {
                 newFace = generateNewFace(secondVertex, resultVertex, nextVertex);
             }
+
+
             //更改未删除边的面信息
             Edge* remainingEdge = nullptr;
             for (auto it = oldFace->edges.begin(); it != oldFace->edges.end(); it++) {
@@ -2330,8 +2370,11 @@ void Mesh::simplification(float scale) {
                     break;
                 }
             }
+
             auto iter1 = remainingEdge->faceId.find(oldFace->faceId);
-            remainingEdge->faceId.erase(iter1);
+            iter1 = remainingEdge->faceId.erase(iter1);
+
+            //创建newFace的过程中已经创建好了新的两条边，因此可以直接寻找到他们
             Edge* newEdge = nullptr;
             int firstVertexOfNewEdgeIndex, secondVertexOfNewEdgeIndex;
             if (nextVertex->vertexId > resultVertex->vertexId) {
@@ -2342,12 +2385,14 @@ void Mesh::simplification(float scale) {
                 secondVertexOfNewEdgeIndex = resultVertex->vertexId;
                 firstVertexOfNewEdgeIndex = nextVertex->vertexId;
             }
+
             for (auto it = newFace->edges.begin(); it != newFace->edges.end(); it++) {
                 if ((*it)->vertexe1->vertexId == firstVertexOfNewEdgeIndex && (*it)->vertexe2->vertexId == secondVertexOfNewEdgeIndex) {
                     newEdge = *it;
                     break;
                 }
             }
+
             //更改非合并点的相邻点,删除removeVertex，添加resultVertex，修改相邻边
             for (auto it = nextVertex->incidentVertexes.begin(); it != nextVertex->incidentVertexes.end(); it++) {
                 if ((*it)->vertexId == removeVertexId) {
@@ -2364,12 +2409,28 @@ void Mesh::simplification(float scale) {
                     break;
                 }
             }
+
             //result点也添加新的边
             resultVertex->incidentEdges.push_back(newEdge);
+            resultVertex->incidentVertexes.push_back(nextVertex);
+
             //删除原来的面和边
             oldFace->deleted = true;
+
             std::pair<int, int> edgePair(oldEdge->vertexe1->vertexId, oldEdge->vertexe2->vertexId);
             m_hash_edge.erase(edgePair);
+
+            //将与oldedge有关的面包含的oldedge的信息删除，防止之后出现访问空指针的情况
+            for (auto it = oldEdge->faceId.begin(); it != oldEdge->faceId.end(); it++) {
+                Face* fac = faces[*it];
+                for (auto its = fac->edges.begin(); its != fac->edges.end(); its++) {
+                    if ((*its)->edgeId == oldEdge->edgeId) {
+                        fac->edges.erase(its);
+                        break;
+                    }
+                }
+            }
+
             for (auto it = edges.begin(); it != edges.end(); it++) {
                 if ((*it)->edgeId == oldEdge->edgeId) {
                     delete(*it);
@@ -2377,15 +2438,23 @@ void Mesh::simplification(float scale) {
                     break;
                 }
             }
+
+
+
             newFaceCount--;
             nextIndex = secondIndex;
             secondIndex = (nextIndex + 1) % incidentCount;
         }
+
+
+
+
+
         //删除与resultVertex相邻的面和边
         //找到原来的面
-        nextIndex = (removeVertex->eIndex + 1) % incidentCount;
+        nextIndex = (removeVertex->eIndex + incidentCount - 1) % incidentCount;
         nextVertex = removeVertex->incidentVertexes[nextIndex];
-        secondIndex = (removeVertex->eIndex + incidentCount - 1) % incidentCount;
+        secondIndex = (removeVertex->eIndex + 1) % incidentCount;
         secondVertex = removeVertex->incidentVertexes[secondIndex];
         Face* oldFace = nullptr;
         for (auto it = contractEdge->faceId.begin(); it != contractEdge->faceId.end(); it++) {
@@ -2394,9 +2463,7 @@ void Mesh::simplification(float scale) {
                 break;
             }
         }
-        Edge* parentEdge = contractEdge->parent;
-        Face* parentFace = getParentFace(parentEdge, oldFace);
-        parentFace->deleteChild(oldFace);
+
         //更改未删除边的面信息
         Edge* remainingEdge = nullptr;
         for (auto it = oldFace->edges.begin(); it != oldFace->edges.end(); it++) {
@@ -2405,8 +2472,34 @@ void Mesh::simplification(float scale) {
                 break;
             }
         }
+
         auto iter1 = remainingEdge->faceId.find(oldFace->faceId);
         remainingEdge->faceId.erase(iter1);
+
+        oldFace->deleted = true;
+        Edge* oldEdge = removeVertex->incidentEdges[nextIndex];
+        std::pair<int, int> edgePair(oldEdge->vertexe1->vertexId, oldEdge->vertexe2->vertexId);
+        m_hash_edge.erase(edgePair);
+
+        //将与oldedge有关的面包含的oldedge的信息删除，防止之后出现访问空指针的情况
+        for (auto it = oldEdge->faceId.begin(); it != oldEdge->faceId.end(); it++) {
+            Face* fac = faces[*it];
+            for (auto its = fac->edges.begin(); its != fac->edges.end(); its++) {
+                if ((*its)->edgeId == oldEdge->edgeId) {
+                    fac->edges.erase(its);
+                    break;
+                }
+            }
+        }
+
+        for (auto it = edges.begin(); it != edges.end(); it++) {
+            if ((*it)->edgeId == oldEdge->edgeId) {
+                delete(*it);
+                edges.erase(it);
+                break;
+            }
+        }
+
 
         //更改相邻点以及相邻边
         for (auto it = resultVertex->incidentVertexes.begin(); it != resultVertex->incidentVertexes.end(); it++) {
@@ -2415,6 +2508,7 @@ void Mesh::simplification(float scale) {
                 break;
             }
         }
+
         for (auto it = resultVertex->incidentEdges.begin(); it != resultVertex->incidentEdges.end(); it++) {
             if ((*it)->edgeId == contractEdge->edgeId) {
                 resultVertex->incidentEdges.erase(it);
@@ -2428,21 +2522,29 @@ void Mesh::simplification(float scale) {
                 break;
             }
         }
-        parentEdge = contractEdge->parent;
-        parentFace = getParentFace(parentEdge, oldFace);
-        parentFace->deleteChild(oldFace);
         for (auto it = oldFace->edges.begin(); it != oldFace->edges.end(); it++) {
             if ((*it)->vertexe1->vertexId != removeVertexId && (*it)->vertexe2->vertexId != removeVertexId) {
                 remainingEdge = (*it);
                 break;
             }
         }
+
         iter1 = remainingEdge->faceId.find(oldFace->faceId);
         remainingEdge->faceId.erase(iter1);
+
         //删除原来的边
         oldFace->deleted = true;
-        std::pair<int, int> edgePair(contractEdge->vertexe1->vertexId, contractEdge->vertexe2->vertexId);
-        m_hash_edge.erase(edgePair);
+        std::pair<int, int> edgePair1(contractEdge->vertexe1->vertexId, contractEdge->vertexe2->vertexId);
+        m_hash_edge.erase(edgePair1);
+        for (auto it = contractEdge->faceId.begin(); it != contractEdge->faceId.end(); it++) {
+            Face* fac = faces[*it];
+            for (auto its = fac->edges.begin(); its != fac->edges.end(); its++) {
+                if ((*its)->edgeId == contractEdge->edgeId) {
+                    fac->edges.erase(its);
+                    break;
+                }
+            }
+        }
         for (auto it = edges.begin(); it != edges.end(); it++) {
             if ((*it)->edgeId == contractEdge->edgeId) {
                 delete(*it);
@@ -2450,24 +2552,28 @@ void Mesh::simplification(float scale) {
                 break;
             }
         }
+
+
+
         //删除点
         removeVertex->deleted = true;
+
+
 
         //更新result点的类型
         std::vector<Face*> incidentFaces;
         std::vector<float> subtendedAngles;
-        isTypeI(resultVertex, incidentFaces, subtendedAngles);
-        /*if (!isTypeI(resultVertex, incidentFaces, subtendedAngles)) {
+        if (!isTypeI(resultVertex, incidentFaces, subtendedAngles)) {
             isTypeII(resultVertex, incidentFaces, subtendedAngles);
-        }*/
+        }
         incidentFaces.clear();
         subtendedAngles.clear();
 
         for (auto it = resultVertex->incidentVertexes.begin(); it != resultVertex->incidentVertexes.end(); it++) {
             isTypeI(*it, incidentFaces, subtendedAngles);
-            /*if (!isTypeI(*it, incidentFaces, subtendedAngles)) {
+            if (!isTypeI(*it, incidentFaces, subtendedAngles)) {
                 isTypeII(*it, incidentFaces, subtendedAngles);
-            }*/
+            }
             incidentFaces.clear();
             subtendedAngles.clear();
         }

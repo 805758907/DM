@@ -11,9 +11,9 @@ int main() {
     //mesh.readSTL("../file/eddgtest.STL");
     mesh.generateDM();
 
-    //mesh.simplification(0.2);
-    //mesh.saveSTLBinary("../file/woct.stl");
-    mesh.saveOBJ("./res/test.obj");
+    mesh.simplification(0.2);
+    mesh.saveSTLBinary("../file/woct.stl");
+    mesh.saveOBJ("../res/test.obj");
 
 
     return 0;
