@@ -2300,43 +2300,44 @@ bool Mesh::isTypeII(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vect
 }
 
 void Mesh::ToSet(Vertex* v) {
+    std::vector<Vertex*> temp_vertex;
+    std::vector<Edge*> temp_edge;
     for (auto it = v->incidentVertexes.begin(); it != v->incidentVertexes.end()-1; it++) {
+        bool isOK = true;
         for (auto tmp = it + 1; tmp != v->incidentVertexes.end(); tmp++) {
             if ((*tmp)->vertexId == (*it)->vertexId) {
-                (*tmp)->deleted = true;
-            }
-        }
-    }
-    bool isOK = false;
-    while (!isOK) {
-        isOK = true;
-        for (auto it = v->incidentVertexes.begin(); it != v->incidentVertexes.end(); it++) {
-            if ((*it)->deleted == true) {
                 isOK = false;
-                v->incidentVertexes.erase(it);
                 break;
             }
         }
+        if (isOK) {
+            temp_vertex.push_back((*it));
+        }
+
     }
+    v->incidentVertexes.clear();
+    for (auto it = temp_vertex.begin(); it != temp_vertex.end(); it++) {
+        v->incidentVertexes.push_back(*it);
+    }
+    temp_vertex.clear();
 
     for (auto it = v->incidentEdges.begin(); it != v->incidentEdges.end() - 1; it++) {
+        bool isOK = true;
         for (auto tmp = it + 1; tmp != v->incidentEdges.end(); tmp++) {
             if ((*tmp)->edgeId == (*it)->edgeId) {
-                (*tmp)->deleted = true;
-            }
-        }
-    }
-    isOK = false;
-    while (!isOK) {
-        isOK = true;
-        for (auto it = v->incidentEdges.begin(); it != v->incidentEdges.end(); it++) {
-            if ((*it)->deleted == true) {
                 isOK = false;
-                v->incidentEdges.erase(it);
                 break;
             }
         }
+        if (isOK) {
+            temp_edge.push_back(*it);
+        }
     }
+    v->incidentEdges.clear();
+    for (auto it = temp_edge.begin(); it != temp_edge.end(); it++) {
+        v->incidentEdges.push_back(*it);
+    }
+    temp_edge.clear();
 }
 
 void Mesh::simplification(float scale) {
