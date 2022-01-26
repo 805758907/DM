@@ -1913,7 +1913,6 @@ void Mesh::init() {
                     }
                 }
                 (*it)->lambda++;
-
                 delete newface;
             }
         }
@@ -1927,7 +1926,10 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vecto
     vertex->incidentVertexes.clear();
     vertex->incidentVertexes.assign(n, nullptr);
     bool notEqual = false;//边的数目与面的数目不一致，非内部点。当不是内部点的时候为true
-    if (n == 2) {//n=2
+    if (n < 2) {
+        printf("Debug!\n");
+    }
+    else if (n == 2) {//n=2 说明是一个边界点
         for (int i = 0; i < n; i++) {
             if (vertex->incidentEdges[i]->vertexe1->vertexId == vertex->vertexId) {
                 vertex->incidentVertexes[i] = vertex->incidentEdges[i]->vertexe2;
@@ -1984,10 +1986,10 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vecto
                         else {
                             v2 = vertex->incidentEdges[j]->vertexe1;
                         }
-                        Edge* tmp = vertex->incidentEdges[i + 1];
-                        vertex->incidentEdges[i + 1] = vertex->incidentEdges[j];
+                        Edge* tmp = vertex->incidentEdges[(i + 1) % n];
+                        vertex->incidentEdges[(i + 1) % n] = vertex->incidentEdges[j];
                         vertex->incidentEdges[j] = tmp;
-                        vertex->incidentVertexes[i + 1] = v2;
+                        vertex->incidentVertexes[(i + 1) % n] = v2;
                         findEdge = true;
                         break;
                     }
@@ -1998,28 +2000,28 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vecto
             }
         }
 
-        for (int i = 0; i < n; i++) {
-            for (auto it = vertex->incidentEdges[i]->faceId.begin(); it != vertex->incidentEdges[i]->faceId.end(); it++) {//对每条边，找到它所属的面中没有访问过的，加入到incidentFaces中
-                bool visited = false;
-                for (auto faceIt = incidentFaces.begin(); faceIt != incidentFaces.end(); faceIt++) {
-                    if ((*faceIt)->faceId == (*it)) {
-                        visited = true;
-                        break;
-                    }
-                }
-                if (!visited) {
-                    incidentFaces.push_back(faces[*it]);
-                }
-            }
-        }
-        /*if (vertex->incidentEdges[n - 1]->vertexe1->vertexId == vertex->vertexId) {
-            vertex->incidentVertexes[n - 1] = vertex->incidentEdges[n - 1]->vertexe2;
-        }
-        else {
-            vertex->incidentVertexes[n - 1] = vertex->incidentEdges[n - 1]->vertexe1;
-        }*/
     }
 
+    /*for (int i = 0; i < n; i++) {
+        for (auto it = vertex->incidentEdges[i]->faceId.begin(); it != vertex->incidentEdges[i]->faceId.end(); it++) {//对每条边，找到它所属的面中没有访问过的，加入到incidentFaces中
+            bool visited = false;
+            for (auto faceIt = incidentFaces.begin(); faceIt != incidentFaces.end(); faceIt++) {
+                if ((*faceIt)->faceId == (*it)) {
+                    visited = true;
+                    break;
+                }
+            }
+            if (!visited) {
+                incidentFaces.push_back(faces[*it]);
+            }
+        }
+    }*/
+    if (vertex->incidentEdges[n - 1]->vertexe1->vertexId == vertex->vertexId) {
+        vertex->incidentVertexes[n - 1] = vertex->incidentEdges[n - 1]->vertexe2;
+    }
+    else {
+        vertex->incidentVertexes[n - 1] = vertex->incidentEdges[n - 1]->vertexe1;
+    }
 
     //找到对应的对角度数
     if (!notEqual)
@@ -2319,6 +2321,7 @@ void Mesh::simplification(float scale) {
         pop_heap(vertexQueue.begin(), vertexQueue.end(), cmp());
         Vertex* removeVertex = vertexQueue.back();
         int removeVertexId = removeVertex->vertexId;
+        //printf("%d\n", removeVertexId);
         vertexQueue.pop_back();
         Edge* contractEdge = removeVertex->e;
         if (contractEdge == nullptr) {//找第一个相邻点来压缩
@@ -2553,7 +2556,14 @@ void Mesh::simplification(float scale) {
             }
         }
 
-
+        for (auto it = removeVertex->incidentVertexes.begin(); it != removeVertex->incidentVertexes.end(); it++) {
+            for (auto tmp = (*it)->incidentVertexes.begin(); tmp != (*it)->incidentVertexes.end(); tmp++) {
+                if ((*tmp)->vertexId == removeVertex->vertexId) {
+                    (*it)->incidentVertexes.erase(tmp);
+                    break;
+                }
+            }
+        }
 
         //删除点
         removeVertex->deleted = true;
