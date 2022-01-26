@@ -31,7 +31,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 	double part1 = len1 / length;	//v1ºÍv2ÓëÆðµã¾àÀëÔÚ×Ü³¤¶ÈµÄÕ¼±È
 	double part2 = len2 / length;
 	if (part2 > 1 || part1 > 1) {
-		printf("Çø¼ä¶Ëµã³¬¹ýÏß¶Î¶Ëµã");
+		printf("Çø¼ä¶Ëµã³¬¹ýÏß¶Î¶Ëµã\n");
 	}
 
 
@@ -123,7 +123,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 	double part1 = len1 / length;	//v1ºÍv2ÓëÆðµã¾àÀëÔÚ×Ü³¤¶ÈµÄÕ¼±È
 	double part2 = len2 / length;
 	if (part2 > 1 || part1 > 1) {
-		printf("Çø¼ä¶Ëµã³¬¹ýÏß¶Î¶Ëµã/n");
+		printf("Çø¼ä¶Ëµã³¬¹ýÏß¶Î¶Ëµã\n");
 		return glm::vec3();
 	}
 	double center = (part1 + part2) / 2;
