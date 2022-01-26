@@ -64,6 +64,8 @@ public:
 
     Edge* findEdgeByPoints(Vertex* v1, Vertex* v2);
     int findVertexByPoint(glm::vec3& p);
+    void ToSet(Vertex* v);//Debug过程中发现简化后出现incident边点重复的情况，添加进行边和点的去重
+
 };
 
 

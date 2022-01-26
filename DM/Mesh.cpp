@@ -1749,6 +1749,7 @@ Vertex* Mesh::generateNewVertex(glm::vec3& position) {
 }
 
 
+
 Face* Mesh::generateNewFace(Vertex* v1, Vertex* v2, Vertex* v3) {//v1,v2,v3是逆时针
     Face* face = new Face();
     std::vector<Vertex*> vs;
@@ -2298,6 +2299,46 @@ bool Mesh::isTypeII(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vect
     return true;
 }
 
+void Mesh::ToSet(Vertex* v) {
+    for (auto it = v->incidentVertexes.begin(); it != v->incidentVertexes.end()-1; it++) {
+        for (auto tmp = it + 1; tmp != v->incidentVertexes.end(); tmp++) {
+            if ((*tmp)->vertexId == (*it)->vertexId) {
+                (*tmp)->deleted = true;
+            }
+        }
+    }
+    bool isOK = false;
+    while (!isOK) {
+        isOK = true;
+        for (auto it = v->incidentVertexes.begin(); it != v->incidentVertexes.end(); it++) {
+            if ((*it)->deleted == true) {
+                isOK = false;
+                v->incidentVertexes.erase(it);
+                break;
+            }
+        }
+    }
+
+    for (auto it = v->incidentEdges.begin(); it != v->incidentEdges.end() - 1; it++) {
+        for (auto tmp = it + 1; tmp != v->incidentEdges.end(); tmp++) {
+            if ((*tmp)->edgeId == (*it)->edgeId) {
+                (*tmp)->deleted = true;
+            }
+        }
+    }
+    isOK = false;
+    while (!isOK) {
+        isOK = true;
+        for (auto it = v->incidentEdges.begin(); it != v->incidentEdges.end(); it++) {
+            if ((*it)->deleted == true) {
+                isOK = false;
+                v->incidentEdges.erase(it);
+                break;
+            }
+        }
+    }
+}
+
 void Mesh::simplification(float scale) {
     init();
     findTypeIAndTypeII();
@@ -2400,7 +2441,18 @@ void Mesh::simplification(float scale) {
             for (auto it = nextVertex->incidentVertexes.begin(); it != nextVertex->incidentVertexes.end(); it++) {
                 if ((*it)->vertexId == removeVertexId) {
                     it = nextVertex->incidentVertexes.erase(it);
-                    nextVertex->incidentVertexes.insert(it, resultVertex);
+
+                    //存在一种可能：只是删除了三角形内部的边但没有形成新的边
+                    bool isOk = true;
+                    for (auto tmp = nextVertex->incidentVertexes.begin(); tmp != nextVertex->incidentVertexes.end(); tmp++) {
+                        if ((*tmp)->vertexId==removeVertexId) {
+                            isOk = false;
+                            break;
+                        }
+                    }
+                    if (isOk) {
+                        nextVertex->incidentVertexes.insert(it, resultVertex);
+                    }
                     break;
                 }
             }
@@ -2451,7 +2503,7 @@ void Mesh::simplification(float scale) {
 
 
 
-
+        
 
         //删除与resultVertex相邻的面和边
         //找到原来的面
@@ -2568,7 +2620,11 @@ void Mesh::simplification(float scale) {
         //删除点
         removeVertex->deleted = true;
 
-
+        //操作，确保变化过的点中没有重复的内容
+        ToSet(resultVertex);
+        for (auto it = resultVertex->incidentVertexes.begin(); it != resultVertex->incidentVertexes.end(); it++) {
+            ToSet(*it);
+        }
 
         //更新result点的类型
         std::vector<Face*> incidentFaces;
