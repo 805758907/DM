@@ -2310,7 +2310,7 @@ void Mesh::ToSet(Vertex* v) {
                 break;
             }
         }
-        if (isOK) {
+        if (isOK && (*it)!=nullptr && !(*it)->deleted) {
             temp_vertex.push_back((*it));
         }
 
@@ -2329,7 +2329,7 @@ void Mesh::ToSet(Vertex* v) {
                 break;
             }
         }
-        if (isOK) {
+        if (isOK && (*it)!=nullptr && !(*it)->deleted) {
             temp_edge.push_back(*it);
         }
     }
@@ -2353,6 +2353,7 @@ void Mesh::simplification(float scale) {
     //开始简化
     while (totalVertexCount > targetVertexCount) {
         //取出最小点
+        totalVertexCount--;
         vertexQueue.clear();
         for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
             if ((*it)->deleted == false) {
@@ -2622,10 +2623,13 @@ void Mesh::simplification(float scale) {
         removeVertex->deleted = true;
 
         //操作，确保变化过的点中没有重复的内容
-        ToSet(resultVertex);
-        for (auto it = resultVertex->incidentVertexes.begin(); it != resultVertex->incidentVertexes.end(); it++) {
+        for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
             ToSet(*it);
         }
+        /*ToSet(resultVertex);
+        for (auto it = resultVertex->incidentVertexes.begin(); it != resultVertex->incidentVertexes.end(); it++) {
+            ToSet(*it);
+        }*/
 
         //更新result点的类型
         std::vector<Face*> incidentFaces;
@@ -2637,6 +2641,9 @@ void Mesh::simplification(float scale) {
         subtendedAngles.clear();
 
         for (auto it = resultVertex->incidentVertexes.begin(); it != resultVertex->incidentVertexes.end(); it++) {
+            if ((*it) == NULL || (*it)->deleted) {
+                continue;
+            }
             isTypeI(*it, incidentFaces, subtendedAngles);
             if (!isTypeI(*it, incidentFaces, subtendedAngles)) {
                 isTypeII(*it, incidentFaces, subtendedAngles);

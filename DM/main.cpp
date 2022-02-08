@@ -6,7 +6,7 @@
 
 int main() {
     Mesh mesh;
-    mesh.readOBJ("../file/kktz.obj");
+    mesh.readOBJ("../file/kms2.obj");
     //mesh.readOBJ("../file/kms3.obj");
     //mesh.readSTL("../file/eddgtest.STL");
     mesh.generateDM();
