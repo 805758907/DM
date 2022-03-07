@@ -132,21 +132,21 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 	double target = center;		//最终分割点的比例
 
 	glm::vec3 position;
-	glm::vec3 rhoEPartVection = direction * glm::vec3(rhoEPart, rhoEPart, rhoEPart);
-	glm::vec3 rhoVPartVection = direction * glm::vec3(rhoVPart, rhoVPart, rhoVPart);
+	glm::vec3 rhoEPartVector = direction * glm::vec3(rhoEPart, rhoEPart, rhoEPart);
+	glm::vec3 rhoVPartVector = direction * glm::vec3(rhoVPart, rhoVPart, rhoVPart);
 
 	bool succeed = false;					//是否找到这个分割点
 
 	if (center <= rhoVPart) {	//中点在rhoVPart左侧，则选取rhoVPart以及右侧的最近可用点（既是候选点，也没有被用过）
 		target = rhoVPart;
-		position = vertexe1->position + rhoVPartVection;
+		position = vertexe1->position + rhoVPartVector;
 
 		while (target <= rightRhoVPart) {
 			//看看是否能在点集中找到这个点
 			auto it = points->find(position);
 			if (it != points->end()) {	//该点已经存在，即是被用过的，则找下一个点
 				target += rhoEPart;
-				position += rhoEPartVection;
+				position += rhoEPartVector;
 			}
 			else {						//不存在，则把该点作为分割点
 				succeed = true;
@@ -157,14 +157,14 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 	}
 	else if (center >= rightRhoVPart) {	//中点在rightRhoVPart右侧，则选取rightRhoVPart以及左侧的最近可用点（既是候选点，也没有被用过）
 		target = rightRhoVPart;
-		position = vertexe2->position - rhoVPartVection;
+		position = vertexe2->position - rhoVPartVector;
 		
 		while (target >= rhoVPart) {
 			//看看是否能在点集中找到这个点
 			auto it = points->find(position);
 			if (it != points->end()) {	//该点已经存在，即是被用过的，则找前一个点
 				target -= rhoEPart;
-				position -= rhoEPartVection;
+				position -= rhoEPartVector;
 			}
 			else {						//不存在，则把该点作为分割点
 				succeed = true;
@@ -184,7 +184,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 			auto itLeft = points->find(positionLeft);
 			if (itLeft != points->end()) {	//该点已经存在，即是被用过的，则找前一个点
 				targetLeft -= rhoEPart;
-				positionLeft -= rhoEPartVection;
+				positionLeft -= rhoEPartVector;
 			}
 			else {						//不存在，则把该点作为分割点
 				succeedLeft = true;
@@ -196,7 +196,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 		glm::vec3 positionRight;
 		if (targetRight > rightRhoVPart) {
 			targetRight = rightRhoVPart;
-			positionRight = vertexe2->position - rhoVPartVection;
+			positionRight = vertexe2->position - rhoVPartVector;
 			auto itRight = points->find(positionRight);
 			if (itRight != points->end()) {	//该点已经存在，即是被用过的，则右侧已没有可用点
 				;
@@ -212,7 +212,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 				auto itRight = points->find(positionRight);
 				if (itRight != points->end()) {	//该点已经存在，即是被用过的，则找后一个点
 					targetRight += rhoEPart;
-					positionRight += rhoEPartVection;
+					positionRight += rhoEPartVector;
 				}
 				else {						//不存在，则把该点作为分割点
 					succeedRight = true;
@@ -221,7 +221,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 			}
 			if (!succeedRight && targetRight > rightRhoVPart) {
 				targetRight = rightRhoVPart;
-				positionRight = vertexe2->position - rhoVPartVection;
+				positionRight = vertexe2->position - rhoVPartVector;
 				auto itRight2 = points->find(positionRight);
 				if (itRight2 != points->end()) {	//该点已经存在，即是被用过的，则右侧已没有可用点
 					;

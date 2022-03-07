@@ -44,7 +44,7 @@ public:
     bool isNLD(Edge* edge);         //判断是否是NLD边
     void findAllNLDEdges();
     void flipAllNLDEdgeInFace(Face* face);
-    void flipEdge(Edge* edge);
+    std::vector<Face*> flipEdge(Edge* edge);                                                        //返回翻转后生成的面
     Face* getParentFace(Edge* edge, Face* childFace);
     Vertex* generateNewVertex(glm::vec3&);
     Face* generateNewFace(Vertex* v1, Vertex* v2, Vertex* v3);
@@ -54,12 +54,14 @@ public:
     float getAnotherVertexDegreeByEdge(Face* face, Edge* edge);
     glm::vec3 ParseOBJVec3(const std::string& line);
     void CreateOBJFace(const std::string& line);
+    void deleteFace(Face* face);
 
     void init();
-    bool isTypeI(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles);
-    bool isTypeII(Vertex* vertex, std::vector<Face*>& incidentFaces, std::vector<float>& subtendedAngles);
+    bool isTypeI(Vertex* vertex, std::vector<float>& subtendedAngles);
+    bool isTypeII(Vertex* vertex, std::vector<float>& subtendedAngles);
     void findTypeIAndTypeII();
-    
+    void flipEdgeOfTypeII(std::vector<Face*>& faceSet, Vertex* vertex, std::list<int>& borderEdge);//在typeII检测的时候，用于翻转边
+
     void simplification(float scale);
 
     Edge* findEdgeByPoints(Vertex* v1, Vertex* v2);

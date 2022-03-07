@@ -5,11 +5,11 @@
 
 class Face {
 public:
-    std::vector<Vertex*> vertexs;   //面上包含的顶点
-    std::vector<Edge*> edges;       //面上包含的边
+    std::vector<Vertex*> vertexs;   //面上包含的顶点（逆时针排序）
+    std::vector<Edge*> edges;       //面上包含的边（逆时针排序）
     glm::vec3 normal;               //平面法向量
     glm::vec4 formula;              //记录下平面的表达式（ax+by+cz+d=0）
-    std::vector<float> angles;      //面上的角度
+    std::vector<float> angles;      //面上的角度（cos），与vertex的下标对应
     char buf[2];
     int faceId;
     std::list<Face*> children;      //Mesh的面只包含其他face，非Mesh的面只包含自己
@@ -26,6 +26,7 @@ public:
     void setId(int id);                         //设置平面ID的函数
     void deleteChild(Face* child);
     void deleteBorder(Edge* edge);              //删除面的某个边界线
+    glm::vec3 getMassCenter();
     
     ~Face();
 };

@@ -6,6 +6,7 @@
 #include<vector>
 
 class Edge;
+class Face;
 
 class Vertex {
 public:
@@ -21,6 +22,9 @@ public:
     int eIndex = -1;        //e在incidentEdges的序号
     bool typeI = false;
     bool typeII = false;
+    std::vector<std::pair<int, int>> flippedEdge;
+    std::vector<Face*> incidentFaces;
+
 public:
     Vertex();               //不赋予坐标，仅初始化编号为-1
     Vertex(float x, float y, float z);  //创建新的坐标为(x,y,z)编号初始化为-1的点
