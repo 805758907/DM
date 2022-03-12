@@ -23,7 +23,7 @@ public:
     bool typeI = false;
     bool typeII = false;
     std::vector<std::pair<int, int>> flippedEdge;
-    std::vector<Face*> incidentFaces;
+    std::vector<Face*> incidentFaces;       //incidentFaces和incidentEdges没有联系
 
 public:
     Vertex();               //不赋予坐标，仅初始化编号为-1

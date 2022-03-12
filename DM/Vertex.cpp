@@ -2,6 +2,7 @@
 
 Vertex::Vertex() {
     vertexId = -1;
+    e = nullptr;
 }
 
 Vertex::Vertex(float newX, float newY, float newZ) {
