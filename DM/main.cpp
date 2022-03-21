@@ -6,11 +6,12 @@
 
 int main() {
     Mesh mesh;
+    //mesh.readOBJ("../file/testSuccess.obj");
     mesh.readOBJ("../file/testObj.obj");
     //mesh.readOBJ("../file/kms3.obj");
     //mesh.readSTL("../file/eddgtest.STL");
     mesh.generateDM();
-    printf("face count: %d\n", mesh.faces.size());
+    //printf("face count: %d\n", mesh.faces.size());
     mesh.simplification(0.5);
     //mesh.saveSTLBinary("../file/woct.stl");
     mesh.saveOBJ("../res/test.obj");
