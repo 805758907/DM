@@ -116,6 +116,9 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 	double rhoEPart = rhoE / length;
 
 	double rightRhoVPart = 1 - rhoVPart;	//Ce点集最右侧的点
+	if (v1 == v2) {
+		printf("same position of splite region\n");
+	}
 	
 	
 	double len1 = glm::distance(v1, vertexe1->position);
@@ -264,7 +267,9 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 	}
 	else {
 		printf("找不到可用的分割点\n");
-		return glm::vec3();
+		//先返回中点试一试：
+
+		return vertexe1->position + direction * glm::vec3(center, center, center);
 	}
 
 }

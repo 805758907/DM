@@ -44,24 +44,26 @@ public:
     bool isNLD(Edge* edge);         //判断是否是NLD边
     void findAllNLDEdges();
     void flipAllNLDEdgeInFace(Face* face);
-    std::vector<Face*> flipEdge(Edge* edge);                                                        //返回翻转后生成的面
-    Face* getParentFace(Edge* edge, Face* childFace);
+    std::vector<Face*> flipEdge(Edge* edge);                                        //返回翻转后生成的面
+    Face* getParentFace(Edge* edge, Face* childFace);                               //获取childFace所在的meshFace
     Vertex* generateNewVertex(glm::vec3&);
     Face* generateNewFace(Vertex* v1, Vertex* v2, Vertex* v3);
     Face* generateNewFaceFromOldFace(Face* parentFace, Vertex* v1, Vertex* v2, Vertex* v3);
-    void addNewNonNLDEdge(Face* face);
+    void addNewNonFlippableNLDEdge(Face* face);
     glm::vec3 getAnotherVertexPositionByEdge(Face* face, Edge* edge);
     float getAnotherVertexDegreeByEdge(Face* face, Edge* edge);
     glm::vec3 ParseOBJVec3(const std::string& line);
     void CreateOBJFace(const std::string& line);
-    void deleteFace(Face* face);
+    void deleteFace(Face* face, bool deleteEdgeFromList);
 
     void init();
     bool isTypeI(Vertex* vertex, std::vector<float>& subtendedAngles);
     bool isTypeII(Vertex* vertex, std::vector<float>& subtendedAngles);
     void findTypeIAndTypeII();
-    bool flipEdgeOfTypeII(std::vector<Face*>& faceSet, Vertex* vertex, std::list<int>& borderEdge);//在typeII检测的时候，用于翻转边
-    bool resortIncidentEdge(Vertex* vertex); //重新排布incidentEdges，使得相邻两条边在同一三角面上。incidentEdges另一个顶点就对应incidentVertexes（下标相同）
+    std::vector<Face*> flipEdgeWhenTestingTypeII(Edge* edgeAB);
+    bool flipAllEdgesOfTypeII(std::vector<Face*>& faceSet, Vertex* vertex, std::list<int>& borderEdge);//在typeII检测的时候，用于翻转边
+    void flipEdgeWhenSimplifying(Edge* edgeAB);           //在压缩TYPE-II顶点的过程中翻转边，需要修改邻边关系
+    bool resortIncidentEdge(Vertex* vertex);            //重新排布incidentEdges，使得相邻两条边在同一三角面上。incidentEdges另一个顶点就对应incidentVertexes（下标相同）
 
     void simplification(float scale);
 
@@ -69,6 +71,7 @@ public:
     int findVertexByPoint(glm::vec3& p);
     void ToSet(Vertex* v);//Debug过程中发现简化后出现incident边点重复的情况，添加进行边和点的去重
 
+    void printData();
 };
 
 
