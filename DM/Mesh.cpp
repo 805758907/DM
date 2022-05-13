@@ -103,8 +103,12 @@ float getPointOfBoundaryEdge(glm::vec3& v1, glm::vec3& v2, glm::vec3& v3) {
     return t;
 }
 
+//各个满足的区间分别为tStart右侧，tEnd左侧，tE右侧，tH右侧，tF左侧，tG左侧，找到其中重叠的最大部分
 std::pair<float, float> getSplitRegion(float tStart, float tEnd, float tE, float tH, float tF, float tG) {
-    float min1;
+    if (tStart > tEnd) {
+        printf("debug");
+    }
+    float min1;           //当tStart > tEnd时出现bug，所以不能取（tStart，tEnd）
     float min2;
     float max1;
     float max2;
@@ -223,9 +227,89 @@ std::pair<float, float> getSplitRegion(float tStart, float tEnd, float tE, float
         return std::pair<float, float>(tStart, max2);   //一个满足
     }
     return std::pair<float, float>(tStart, tEnd);   //0个满足
-
-
-
+    /*
+    float min1;         //min1 < min2 < min3
+    float min2;
+    float min3;
+    float max1;         //max1 < max2 < max3
+    float max2;
+    float max3;
+    if (tE > tH) {
+        if (tStart > tE) {
+            min1 = tH;
+            min2 = tE;
+            min3 = tStart;
+        }
+        else if (tStart > tH) {
+            min1 = tH;
+            min2 = tStart;
+            min3 = tE;
+        }
+        else {
+            min1 = tStart;
+            min2 = tH;
+            min3 = tE;
+        }
+        
+    }
+    else {
+        if (tStart > tH) {
+            min1 = tE;
+            min2 = tH;
+            min3 = tStart;
+        }
+        else if (tStart > tE) {
+            min1 = tE;
+            min2 = tStart;
+            min3 = tH;
+        }
+        else {
+            min1 = tStart;
+            min2 = tE;
+            min3 = tH;
+        }
+    }
+    if (tF > tG) {
+        if (tEnd > tF) {
+            max1 = tG;
+            max2 = tF;
+            max3 = tEnd;
+        }
+        else if (tEnd > tG) {
+            max1 = tG;
+            max2 = tEnd;
+            max3 = tF;
+        }
+        else {
+            max1 = tEnd;
+            max2 = tG;
+            max3 = tF;
+        }
+    }
+    else {
+        if (tEnd > tG) {
+            max1 = tF;
+            max2 = tG;
+            max3 = tEnd;
+        }
+        else if (tEnd > tF) {
+            max1 = tF;
+            max2 = tEnd;
+            max3 = tG;
+        }
+        else {
+            max1 = tEnd;
+            max2 = tF;
+            max3 = tG;
+        }
+    }
+    if (min3 <= max1) {
+        return  std::pair<float, float>(min3, max1);    //6满足
+    }
+    else if (min3 <= max2) {
+        return  std::pair<float, float>(min3, max2);    //5满足,max1不满足
+    }else if()
+    */
 }
 
 std::pair<float, float> getSplitRegionOfBoundaryEdge(float tStart, float tEnd, float tD, float tE) {
@@ -295,15 +379,26 @@ bool judgeAntiClockWish(Face* face, Vertex* v1, Vertex* v2) {//v1->v2是逆时�
 //旋转pointRotated：以normalFixed作为固定面的法向量，normalRotated为要旋转平面的法向量，edgeNormal作为交线的法向量，startPosition作为交线的起始点
 glm::vec3 rotatePoint(glm::vec3& normalFixed, glm::vec3& normalRotated, glm::vec3& edgeNormal, glm::vec3& startPosition, glm::vec3& pointRotated) {
     float cosAngle = glm::dot(normalFixed, normalRotated);   //都是单位向量
+    if (cosAngle > 1) {
+        cosAngle = 1;
+    }
+    else if (cosAngle < -1) {
+        cosAngle = -1;
+    }
     float angle = acos(cosAngle);                           //旋转的弧度
+    if (isnan(angle)) {
+        printf("nan when compute acos\n");
+    }
     glm::vec3 o = glm::normalize(glm::cross(normalFixed, normalRotated));   //判断旋转方向，与交线同向则顺时针旋转；反向则逆时针旋转
     glm::mat4 trans = glm::mat4(1.0f); //创建单位矩阵
-    if ((o.x >= 0 && edgeNormal.x < 0) || (o.x <= 0 && edgeNormal.x > 0)) {  //反向(因为glm::rotate函数本来就是逆时针旋转的）
-        ;
-    }
-    else {                              //同向
+    //修改两向量同向、反向的判断
+    if (glm::dot(o, edgeNormal) > 0) {  //同向
         angle = -angle;
     }
+    else {                              //反向(因为glm::rotate函数本来就是逆时针旋转的）
+        ;
+    }
+
     trans = glm::rotate(trans, angle, edgeNormal);          //旋转矩阵
     //把旋转轴移动到原点，再旋转，再移动回来
     glm::mat4 moveTo = glm::mat4(1.0f);
@@ -561,10 +656,19 @@ bool Mesh::readOBJ(const char* fileName)
                 }
                 else if (lineCStr[1] == ' ' || lineCStr[1] == '\t') {
                     glm::vec3 position = ParseOBJVec3(line);
-                    Vertex* vertex = new Vertex();
-                    vertex->init(position);
-                    vertex->setId(vertexes.size());
-                    this->vertexes.push_back(vertex);
+                    int id = findVertexByPoint(position);
+                    Vertex* vertex = nullptr;
+                    if (id == -1) {			//没找到，该point是新的
+                        vertex = new Vertex();
+                        vertex->init(position);
+                        vertex->setId(vertexes.size());
+                        m_hash_point[position] = vertexes.size();
+                        
+                    }
+                    else {
+                        vertex = vertexes[id];
+                    }
+                    vertexes.push_back(vertex); //在obj中，可能存在两个顶点实质为同一个点的情况
                 }
 
                 break;
@@ -744,6 +848,8 @@ bool Mesh::saveOBJ(const char* fileName)
             }
         }
     }
+    fclose(fp);
+
 }
 
 bool Mesh::saveSTLASCII(const char* fileName) {
@@ -1045,7 +1151,6 @@ void Mesh::generateDM() {
     }
 
 
-
     int count = 0;
     for (auto it = edges.begin(); it != edges.end(); it++) {
         if (isNLD(*it)) {
@@ -1092,15 +1197,30 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         }
 
         float cosAngle = glm::dot(normalABD, normalABC);                        //两个法向量的夹角cos，法向量都是单位向量
+        if (cosAngle > 1) {
+            cosAngle = 1;
+        }
+        else if (cosAngle < -1) {
+            cosAngle = -1;
+        }
         float angle = acos(cosAngle);                                           //旋转的弧度
         glm::vec3 ve = glm::normalize(vertexA->position - vertexB->position);   //该边的向量B->A
         glm::vec3 o = glm::normalize(glm::cross(normalABD, normalABC));         //o是法向量的叉乘，此结果与交线AB平行。用于判断旋转方向，与BA同向则绕BA顺时针旋转；反向则逆时针旋转
-        if ((o.x >= 0 && ve.x < 0) || (o.x <= 0 && ve.x > 0)) {                 //反向(因为glm::rotate函数本来就是逆时针旋转的）
-            //angle = -angle;
-        }
-        else {
+        //if ((o.x >= 0 && ve.x < 0) || (o.x <= 0 && ve.x > 0)) {                 //反向(因为glm::rotate函数本来就是逆时针旋转的）
+        //    //angle = -angle;
+        //}
+        //else {
+        //    angle = -angle;
+        //}
+
+        //修改两向量同向、反向的判断
+        if (glm::dot(o, ve) > 0) {  //同向
             angle = -angle;
         }
+        else {                              //反向(因为glm::rotate函数本来就是逆时针旋转的）
+            ;
+        }
+
         glm::mat4 trans = glm::mat4(1.0f);              //创建单位矩阵
         trans = glm::rotate(trans, angle, ve);          //旋转矩阵
 
@@ -1157,7 +1277,8 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
                                 faceACE = faces[*(++edgeAC->faceId.begin())];
                             }
                             bool antiClockWish = judgeAntiClockWish(faceACE, vertexA, vertexC);
-                */            glm::vec3 normalACE;
+                */
+                glm::vec3 normalACE;
                 if (antiClockWishOfABInABD) {            //AB在ABD为逆时针，则在ABC为顺时针，所以AC在ABC为逆时针，在ACE为顺时针
                     normalACE = calNormal(newVertexCPos, vertexA->position, newVertexEPos);
                 }
@@ -1171,6 +1292,9 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
                 center = solveCenterPointOfCircle(vertexA->position, newVertexEPos, newVertexCPos);
                 tE = getAnotherPoint(vertexB->position, vertexA->position, center);
+                if (tE < 0) {
+                //    tE = 0;
+                }
             }
         }
         else {
@@ -1200,7 +1324,9 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
                 center = solveCenterPointOfCircle(vertexB->position, newVertexCPos, newVertexFPos);
                 tF = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
-
+                if (tF > 1) {
+                //    tF = 1;
+                }
             }
 
         }
@@ -1274,6 +1400,10 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
                 center = solveCenterPointOfCircle(vertexB->position, vertexD->position, vertexGPos);
                 tG = 1 - getAnotherPoint(vertexA->position, vertexB->position, center);
+                
+                if (tG > 1) {
+                    tG = 1;
+                }
             }
         }
         else {
@@ -1375,11 +1505,11 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
                 break;
             }
         }
-
+        //saveOBJ("afterSplit.obj");
         //翻转parentFaceOfABC和parentFaceOfABD中所有flippable的NLD
         flipAllNLDEdgeInFace(parentFaceOfABC);
         flipAllNLDEdgeInFace(parentFaceOfABD);
-
+        //saveOBJ("afterFlip.obj");
         addNewNonFlippableNLDEdge(parentFaceOfABC);
         addNewNonFlippableNLDEdge(parentFaceOfABD);
     }
@@ -1509,7 +1639,7 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
                 break;
             }
         }
-
+        //saveOBJ("afterSplit.obj");
         //翻转parentFaceOfABC中所有flippable的NLD
         flipAllNLDEdgeInFace(parentFaceOfABC);
 
@@ -1541,7 +1671,7 @@ bool Mesh::isNLD(Edge* edge) {
         float length02 = glm::distance(b->position, top->position);
 
         cos = glm::dot((a->position - top->position), (b->position - top->position)) / length01 / length02;
-        if (cos < 0.000001) {
+        if (cos < -0.000001) {
             return true;
         }
         else {
@@ -1549,9 +1679,12 @@ bool Mesh::isNLD(Edge* edge) {
         }
     }
     else if (edge->faceId.size() == 2) {
-        //printf_s("9_2\n");
         Face* face1 = faces[*(edge->faceId.begin())];
         Face* face2 = faces[*(++edge->faceId.begin())];
+        Face* parentFaceOf1 = getParentFace(edge, face1);
+        Face* parentFaceOf2 = getParentFace(edge, face2);
+        
+
         Vertex* a = edge->vertexe1;
         Vertex* b = edge->vertexe2;
         Vertex* top1 = nullptr;
@@ -1573,21 +1706,36 @@ bool Mesh::isNLD(Edge* edge) {
         double length01 = glm::distance(a->position, top1->position);
         double length02 = glm::distance(b->position, top1->position);
         cos1 = glm::dot((a->position - top1->position), (b->position - top1->position)) / length01 / length02;
+        if (cos1 > 1) {
+            cos1 = 1;
+        }else if (cos1 < -1) {
+            cos1 = -1;
+        }
 
         double length31 = glm::distance(a->position, top2->position);
         double length32 = glm::distance(b->position, top2->position);
         cos2 = glm::dot((a->position - top2->position), (b->position - top2->position)) / length31 / length32;
+        if (cos2 > 1) {
+            cos2 = 1;
+        }
+        else if (cos2 < -1) {
+            cos2 = -1;
+        }
+
         //求角度之和，用sin(1+2) = sin(1)*cos(2) + cos(1)*sin(2)
         double sin1 = sqrt(1 - cos1 * cos1);
         double sin2 = sqrt(1 - cos2 * cos2);
         double angle1 = acos(cos1);
         double angle2 = acos(cos2);
+        if (isnan(angle1) || isnan(angle2)) {
+            printf("nan when compute acos\n");
+        }
         double sin12 = (sin1 * cos2 + cos1 * sin2);
-        if ((angle1 + angle2) > PI || (sin12 < 0.000001 && ((angle1 + angle2)> PI/2))) { //如果角度和大于180度，判断是否可翻转
+        if ((angle1 + angle2) > PI || (sin12 < -0.000001 && ((angle1 + angle2)> PI/2))) { //如果角度和大于180度，判断是否可翻转
             glm::vec3 normal1 = glm::normalize(face1->normal);
             glm::vec3 normal2 = glm::normalize(face2->normal);
             glm::vec3 dif = normal1 - normal2;
-            if (glm::distance(dif, glm::vec3(0, 0, 0)) < 0.000002 || (normal1 + normal2 == glm::vec3(0, 0, 0))) {//如果两个法向量平行（此处用向量差模长小于0.000002近似平行）
+            if (glm::distance(dif, glm::vec3(0, 0, 0)) < 0.000002 || (glm::dot(normal1,normal2) == 1)) {//如果两个法向量平行（此处用向量差模长小于0.000002近似平行）
                 if (top1->vertexId < top2->vertexId) {      //该边两个对点如果是在同一直线上，则不是可翻转的
                     if (findEdgeByPoints(top1, top2) != nullptr) {
                         return true;
@@ -1598,17 +1746,38 @@ bool Mesh::isNLD(Edge* edge) {
                         return true;
                     }
                 }
+                
                 edge->flippable = true;
+                //为了防止处理两个面不属于同一父面的情况（翻转会导致父子关系出现问题）
+                if (parentFaceOf1->faceId != parentFaceOf2->faceId) {
+                    edge->flippable = false;
+                }
+                
                 if (sin12 < 0) {
                     return true;
                 }
                 else {  //如果翻转后生成的边也是NLD，则原边不是可翻转的边，但是也是一条NLD边
                     double cos3 = glm::dot((top1->position - a->position), (top2->position - a->position)) / length01 / length31;
+                    if (cos3 > 1) {
+                        cos3 = 1;
+                    }
+                    else if (cos3 < -1) {
+                        cos3 = -1;
+                    }
                     double cos4 = glm::dot((top1->position - b->position), (top2->position - b->position)) / length02 / length32;
+                    if (cos4 > 1) {
+                        cos4 = 1;
+                    }
+                    else if (cos4 < -1) {
+                        cos4 = -1;
+                    }
                     double sin3 = sqrt(1 - cos3 * cos3);
                     double sin4 = sqrt(1 - cos4 * cos4);
                     double angle3 = acos(cos3);
                     double angle4 = acos(cos4);
+                    if (isnan(angle3) || isnan(angle4)) {
+                        printf("nan when compute acos\n");
+                    }
                     if ((sin3 * cos4 + cos3 * sin4) <= 0 || (angle3 + angle4) >= PI) {
                         edge->flippable = false;
                         return true;
@@ -1682,6 +1851,7 @@ std::vector<Face*> Mesh::flipEdge(Edge* edgeAB) {       //翻转边，删除原�
     /*
     printf("flip %d", edgeAB->edgeId);*/
     //寻找顶点和边
+    //saveOBJ("beforeFilp.obj");
     Vertex* vertexA = edgeAB->vertexe1;
     Vertex* vertexB = edgeAB->vertexe2;
     Face* faceABC = faces[*(edgeAB->faceId.begin())];
@@ -1713,7 +1883,7 @@ std::vector<Face*> Mesh::flipEdge(Edge* edgeAB) {       //翻转边，删除原�
         }
     }
     //判断原三角面顶点A、C的顺序，创建新的面ACD、BCD
-    bool antiClockWish = judgeAntiClockWish(faceABC, vertexA, vertexC);
+    /*bool antiClockWish = judgeAntiClockWish(faceABC, vertexA, vertexC);
     Face* faceACD = nullptr;
     Face* faceBCD = nullptr;
     if (antiClockWish) {
@@ -1724,7 +1894,9 @@ std::vector<Face*> Mesh::flipEdge(Edge* edgeAB) {       //翻转边，删除原�
         faceACD = generateNewFaceFromOldFace(faceABC, vertexC, vertexA, vertexD);
         faceBCD = generateNewFaceFromOldFace(faceABC, vertexB, vertexC, vertexD);
     }
-
+    if (faceACD->faceId == 26) {
+        printf("debug");
+    }*/
 
     //从parentFace中删除原来的面，添加新的面
     Edge* parentEdge = edgeAB->parent;
@@ -1733,15 +1905,73 @@ std::vector<Face*> Mesh::flipEdge(Edge* edgeAB) {       //翻转边，删除原�
     Face* parentFaceOfABD = getParentFace(parentEdge, faceABD);
 
     if (parentFaceOfABC->faceId == parentFaceOfABD->faceId) {   //同一个面片分割出来的两个子面片，则设置parentFace,parentFace也删除原面片，添加新的面作为子面片
+        bool antiClockWish = judgeAntiClockWish(faceABC, vertexA, vertexC);
+        Face* faceACD = nullptr;
+        Face* faceBCD = nullptr;
+        if (antiClockWish) {
+            faceACD = generateNewFaceFromOldFace(faceABC, vertexA, vertexC, vertexD);
+            faceBCD = generateNewFaceFromOldFace(faceABC, vertexC, vertexB, vertexD);
+        }
+        else {
+            faceACD = generateNewFaceFromOldFace(faceABC, vertexC, vertexA, vertexD);
+            faceBCD = generateNewFaceFromOldFace(faceABC, vertexB, vertexC, vertexD);
+        }
+        
         parentFaceOfABC->deleteChild(faceABC);
         parentFaceOfABC->deleteChild(faceABD);
         parentFaceOfABC->children.push_back(faceACD);
         parentFaceOfABC->children.push_back(faceBCD);
         setMeshFaceOfNewEdge(parentFaceOfABC, faceACD);
         setMeshFaceOfNewEdge(parentFaceOfABC, faceBCD);
+
+        //原来的边删去faceId
+        auto iter = edgeAD->faceId.find(faceABD->faceId);
+        edgeAD->faceId.erase(iter);
+        iter = edgeBD->faceId.find(faceABD->faceId);
+        edgeBD->faceId.erase(iter);
+        iter = edgeAC->faceId.find(faceABC->faceId);
+        edgeAC->faceId.erase(iter);
+        iter = edgeBC->faceId.find(faceABC->faceId);
+        edgeBC->faceId.erase(iter);
+
+
+        /*
+        //检测
+        for (auto it = edgeAB->meshFaceId.begin(); it != edgeAB->meshFaceId.end(); it++) {
+            addNewNonFlippableNLDEdge(faces[*it]);
+        }*/
+
+        //删除边
+        edgeAB->meshFaceId.clear();
+        edgeAB->faceId.clear();
+        std::pair<int, int> edgePair(edgeAB->vertexe1->vertexId, edgeAB->vertexe2->vertexId);
+        m_hash_edge.erase(edgePair);
+        for (auto it = edges.begin(); it != edges.end(); it++) {
+            if ((*it)->edgeId == edgeAB->edgeId) {
+                (*it)->deleted = true;
+                delete(*it);
+                edges.erase(it);
+                break;
+            }
+        }
+
+        faceABC->deleted = true;
+        faceABC->vertexs.clear();
+        faceABD->deleted = true;
+        faceABD->vertexs.clear();
+
+        std::vector<Face*> newFaces;
+        newFaces.push_back(faceACD);
+        newFaces.push_back(faceBCD);
+
+        if (faceACD->faceId == 26) {
+            //saveOBJ("progress.obj");
+        }
+        //saveOBJ("afterFilp.obj");
+        return newFaces;
     }
     else {                                                      //这两个面不是同一个面片分割出来的，只是法向量相同而已。则把新的面作为meshFace，也是自己的parentFace，原来的边的meshFace删去原来的面
-        parentFaceOfABC->deleteChild(faceABC);
+        /*parentFaceOfABC->deleteChild(faceABC);
         parentFaceOfABD->deleteChild(faceABD);
         setMeshFaceOfNewEdge(faceACD, faceACD);
         setMeshFaceOfNewEdge(faceBCD, faceBCD);
@@ -1758,7 +1988,9 @@ std::vector<Face*> Mesh::flipEdge(Edge* edgeAB) {       //翻转边，删除原�
             edgeBD->meshFaceId.erase(faceIt2);
         }
         faceACD->isMesh = true;
-        faceBCD->isMesh = true; 
+        faceBCD->isMesh = true;*/ 
+        edgeAB->flippable = false;
+
 /* 
         parentFaceOfABC->deleteChild(faceABC);
         parentFaceOfABD->deleteChild(faceABD);
@@ -1769,46 +2001,51 @@ std::vector<Face*> Mesh::flipEdge(Edge* edgeAB) {       //翻转边，删除原�
     }
 
 
-    //原来的边删去faceId
-    auto iter = edgeAD->faceId.find(faceABD->faceId);
-    edgeAD->faceId.erase(iter);
-    iter = edgeBD->faceId.find(faceABD->faceId);
-    edgeBD->faceId.erase(iter);
-    iter = edgeAC->faceId.find(faceABC->faceId);
-    edgeAC->faceId.erase(iter);
-    iter = edgeBC->faceId.find(faceABC->faceId);
-    edgeBC->faceId.erase(iter);
+    ////原来的边删去faceId
+    //auto iter = edgeAD->faceId.find(faceABD->faceId);
+    //edgeAD->faceId.erase(iter);
+    //iter = edgeBD->faceId.find(faceABD->faceId);
+    //edgeBD->faceId.erase(iter);
+    //iter = edgeAC->faceId.find(faceABC->faceId);
+    //edgeAC->faceId.erase(iter);
+    //iter = edgeBC->faceId.find(faceABC->faceId);
+    //edgeBC->faceId.erase(iter);
 
 
-    /*
-    //检测
-    for (auto it = edgeAB->meshFaceId.begin(); it != edgeAB->meshFaceId.end(); it++) {
-        addNewNonFlippableNLDEdge(faces[*it]);
-    }*/
-    
-    //删除边
-    edgeAB->meshFaceId.clear();
-    edgeAB->faceId.clear();
-    std::pair<int, int> edgePair(edgeAB->vertexe1->vertexId, edgeAB->vertexe2->vertexId);
-    m_hash_edge.erase(edgePair);
-    for (auto it = edges.begin(); it != edges.end(); it++) {
-        if ((*it)->edgeId == edgeAB->edgeId) {
-            (*it)->deleted = true;
-            delete(*it);
-            edges.erase(it);
-            break;
-        }
-    }
+    ///*
+    ////检测
+    //for (auto it = edgeAB->meshFaceId.begin(); it != edgeAB->meshFaceId.end(); it++) {
+    //    addNewNonFlippableNLDEdge(faces[*it]);
+    //}*/
+    //
+    ////删除边
+    //edgeAB->meshFaceId.clear();
+    //edgeAB->faceId.clear();
+    //std::pair<int, int> edgePair(edgeAB->vertexe1->vertexId, edgeAB->vertexe2->vertexId);
+    //m_hash_edge.erase(edgePair);
+    //for (auto it = edges.begin(); it != edges.end(); it++) {
+    //    if ((*it)->edgeId == edgeAB->edgeId) {
+    //        (*it)->deleted = true;
+    //        delete(*it);
+    //        edges.erase(it);
+    //        break;
+    //    }
+    //}
 
-    faceABC->deleted = true;
-    faceABC->vertexs.clear();
-    faceABD->deleted = true;
-    faceABD->vertexs.clear();
+    //faceABC->deleted = true;
+    //faceABC->vertexs.clear();
+    //faceABD->deleted = true;
+    //faceABD->vertexs.clear();
 
-    std::vector<Face*> newFaces;
-    newFaces.push_back(faceACD);
-    newFaces.push_back(faceBCD);
-    return newFaces;
+    //std::vector<Face*> newFaces;
+    //newFaces.push_back(faceACD);
+    //newFaces.push_back(faceBCD);
+
+    //if (faceACD->faceId == 26) {
+    //    saveOBJ("progress.obj");
+    //}
+    //saveOBJ("afterFilp.obj");
+    //return newFaces;
 }
 
 Face* Mesh::getParentFace(Edge* edge, Face* childFace) {    //根据边edge来找meshFace
@@ -1827,7 +2064,11 @@ Face* Mesh::getParentFace(Edge* edge, Face* childFace) {    //根据边edge来�
             }
         }
     }
-    printf("no face contain this childFace\n");
+    printf("no face contain this childFace\n");//如果
+//    if ((*childFace->children.begin())->faceId == childFace->faceId) {
+//        return childFace;
+//    }
+
     return faces[*(edge->meshFaceId.begin())];
 }
 
@@ -1857,12 +2098,12 @@ Face* Mesh::generateNewFace(Vertex* v1, Vertex* v2, Vertex* v3) {//v1,v2,v3是�
     vs.push_back(v3);
 
     face->setId(faces.size());
-    if (face->faceId == 9057) {
-        printf("debug");
-    }
-    if (face->faceId == 20165) {//faceId数等于4的边多出来的面id
-        printf("debug");
-    }
+    //if (face->faceId == 9057) {
+    //    printf("debug");
+    //}
+    //if (face->faceId == 20165) {//faceId数等于4的边多出来的面id
+    //    printf("debug");
+    //}
     face->setVertex(vs);
     face->isMesh = true;
     faces.push_back(face);
@@ -1884,12 +2125,12 @@ Face* Mesh::generateNewFaceFromOldFace(Face* parentFace, Vertex* v1, Vertex* v2,
     vs.push_back(v3);
 
     face->setId(faces.size());
-    if (face->faceId == 9057) {
-        printf("debug");
-    }
-    if (face->faceId == 20165) {
-        printf("debug");
-    }
+    //if (face->faceId == 9057) {
+    //    printf("debug");
+    //}
+    //if (face->faceId == 20165) {
+    //    printf("debug");
+    //}
     face->setVertex(vs);
     face->isMesh = false;
     faces.push_back(face);
@@ -1979,6 +2220,9 @@ void Mesh::init() {
 
     std::unordered_map<int, bool> visitedFace;//STL中的哈希容器
     for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
+        if ((*it)->vertexId == 899) {
+            printf("debug");
+        }
         //计算每个点的Q矩阵
         for (auto edgeIt = (*it)->incidentEdges.begin(); edgeIt != (*it)->incidentEdges.end(); edgeIt++) {//对于该点，遍历它所有邻边
             for (auto faceIt = (*edgeIt)->faceId.begin(); faceIt != (*edgeIt)->faceId.end(); faceIt++) {        //看看该边在哪些面上，计算Q值
@@ -2035,6 +2279,9 @@ void Mesh::init() {
 
 
 bool Mesh::isTypeI(Vertex* vertex, std::vector<float>& subtendedAngles) {
+    if (vertex->vertexId == 899) {
+        printf("debug");
+    }
     vertex->boundary = false;
     int n = vertex->incidentEdges.size();
     vertex->eph = 0x7f7fffff;
@@ -2048,9 +2295,9 @@ bool Mesh::isTypeI(Vertex* vertex, std::vector<float>& subtendedAngles) {
     }
     
     std::vector<Edge*> oppositeEdges;
-    if (vertex->vertexId == 5251) {
-        printf("debug");
-    }
+    //if (vertex->vertexId == 5251) {
+    //    printf("debug");
+    //}
     //oppositeEdges.assign(n, nullptr);
     if (!notEqual) {                                //内部点
         //找到对应的对角度数
@@ -2540,9 +2787,9 @@ void Mesh::flipEdgeWhenSimplifying(Edge* edgeAB) {  //找到AB边对应的边和
 }
 
 bool Mesh::resortIncidentEdge(Vertex* vertex) {     //根据incidentEdges来确定incidentVertexes和incidentFaces，并且调整两个数组的顺序
-    if (vertex->vertexId == 3350 && vertex->incidentEdges.size() == 8) {
-        printf("debug");
-    }
+    //if (vertex->vertexId == 3350 && vertex->incidentEdges.size() == 8) {
+    //    printf("debug");
+    //}
 
 
     //subtendedAngles是同下标incidentFaces的对角
@@ -3167,9 +3414,9 @@ void Mesh::simplification(float scale) {
                 if ((*it) == NULL || (*it)->deleted) {
                     continue;
                 }
-                if ((*it)->vertexId == 1260) {
-                    printf("debug");
-                }
+                //if ((*it)->vertexId == 1260) {
+                //    printf("debug");
+                //}
                 if (!isTypeI(*it, subtendedAngles)) {
                     
                     isTypeII(*it, subtendedAngles);

@@ -17,11 +17,11 @@ int main() {
     
     mesh.generateDM();
     //printf("face count: %d\n", mesh.faces.size());
-    //mesh.simplification(0.4);
+    //mesh.simplification(0.5);
     mesh.printData();
     //mesh.saveSTLBinary("../file/woct.stl");
     //mesh.saveOBJ("../res/withoutCheckwithDeleteSuc.obj");
-    mesh.saveOBJ("../res/simplify.obj");
+    mesh.saveOBJ("../res/T1obj.obj");
     return 0;
 }
 
