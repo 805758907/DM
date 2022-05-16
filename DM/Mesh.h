@@ -7,8 +7,9 @@
 
 class Mesh {
 public:
-    char partName[80];          //文件名称
-    int faceNum;                //面的数目
+    char partName[80] = {};          //文件名称
+    int faceNum = 0;                //面的数目
+    int vertexNum = 0;
     double lMin = 10000000000;
     double lMax = 0;
     double sinThetaMin = 1;
@@ -44,7 +45,7 @@ public:
     bool isNLD(Edge* edge);         //判断是否是NLD边
     void findAllNLDEdges();
     void flipAllNLDEdgeInFace(Face* face);
-    std::vector<Face*> flipEdge(Edge* edge);                                        //返回翻转后生成的面
+    void flipEdge(Edge* edge);                                        //返回翻转后生成的面
     Face* getParentFace(Edge* edge, Face* childFace);                               //获取childFace所在的meshFace
     Vertex* generateNewVertex(glm::vec3&);
     Face* generateNewFace(Vertex* v1, Vertex* v2, Vertex* v3);
@@ -55,6 +56,7 @@ public:
     glm::vec3 ParseOBJVec3(const std::string& line);
     void CreateOBJFace(const std::string& line);
     void deleteFace(Face* face, bool deleteEdgeFromList);
+    float getPerpendicularPoint(glm::vec3& v1, glm::vec3& v2, glm::vec3& v3);
 
     void init();
     bool isTypeI(Vertex* vertex, std::vector<float>& subtendedAngles);

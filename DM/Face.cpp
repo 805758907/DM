@@ -37,20 +37,31 @@ Face::~Face() {
 }
 
 void Face::deleteChild(Face* child){
+    bool faceDeleted = false;
     for (auto it = children.begin(); it != children.end(); it++) {
         if ((*it)->faceId == child->faceId) {
             children.erase(it);
+            faceDeleted = true;
             break;
         }
     }
+    if (!faceDeleted) {
+        printf("deleteChild error\n");
+    }
+
 }
 
 void Face::deleteBorder(Edge* edge){
+    bool borderDeleted = false;
     for (auto it = borders.begin(); it != borders.end(); it++) {
         if ((*it)->edgeId == edge->edgeId) {
             borders.erase(it);
+            borderDeleted = true;
             break;
         }
+    }
+    if (!borderDeleted) {
+        printf("deleteBorder error\n");
     }
 }
 
