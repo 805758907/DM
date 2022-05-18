@@ -6,20 +6,21 @@
 
 int main() {
     Mesh mesh;
-    //mesh.readOBJ("../file/testSuccess.obj");
+    mesh.readOBJ("../file/testSuccess.obj");
     //mesh.readOBJ("../file/testObj.obj");
     //mesh.readOBJ("../file/bunny.obj");
     //mesh.readSTL("../file/test.stl");
     //mesh.readSTL("../file/T1.stl");
-    mesh.readOBJ("../file/T1objSuccess.obj");
+    //mesh.readOBJ("../file/T1objSuccess.obj");
+    //mesh.readOBJ("../file/T1objSuccessWithNoBoundary.obj");
     //mesh.readOBJ("../file/airforce1Obj.obj");
-    mesh.printData();
+    //mesh.printData();
     //mesh.readSTL("../file/½ô¶¨ÂÝ¶¤M3X5-N.STL");
     
     //mesh.generateDM();
     //printf("face count: %d\n", mesh.faces.size());
-    mesh.simplification(0.4);
-    mesh.printData();
+    mesh.simplification(0.2);
+    //mesh.printData();
     //mesh.saveSTLBinary("../file/woct.stl");
     //mesh.saveOBJ("../res/withoutCheckwithDeleteSuc.obj");
     mesh.saveOBJ("../res/res.obj");

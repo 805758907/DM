@@ -62,9 +62,9 @@ public:
     bool isTypeI(Vertex* vertex, std::vector<float>& subtendedAngles);
     bool isTypeII(Vertex* vertex, std::vector<float>& subtendedAngles);
     void findTypeIAndTypeII();
-    std::vector<Face*> flipEdgeWhenTestingTypeII(Edge* edgeAB);
+    std::vector<Face*> flipEdgeWhenTestingTypeII(Edge* edgeAB, Face* faceABC, Face* faceABD);
     bool flipAllEdgesOfTypeII(std::vector<Face*>& faceSet, Vertex* vertex, std::list<int>& borderEdge);//在typeII检测的时候，用于翻转边
-    void flipEdgeWhenSimplifying(Edge* edgeAB);           //在压缩TYPE-II顶点的过程中翻转边，需要修改邻边关系
+    void flipEdgeWhenSimplifying(Vertex* vertexA, Vertex* vertexB, std::list<Face*>& newFaces);           //在压缩TYPE-II顶点的过程中翻转边，需要修改邻边关系
     bool resortIncidentEdge(Vertex* vertex);            //重新排布incidentEdges，使得相邻两条边在同一三角面上。incidentEdges另一个顶点就对应incidentVertexes（下标相同）
 
     void simplification(float scale);
