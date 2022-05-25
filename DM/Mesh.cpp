@@ -105,128 +105,220 @@ float getPointOfBoundaryEdge(glm::vec3& v1, glm::vec3& v2, glm::vec3& v3) {
 
 //各个满足的区间分别为tStart右侧，tEnd左侧，tE右侧，tH右侧，tF左侧，tG左侧，找到其中重叠的最大部分
 std::pair<float, float> getSplitRegion(float tStart, float tEnd, float tE, float tH, float tF, float tG) {
-    if (tStart > tEnd) {
+    if (tE > 1) {
+        tE = 1;
+    }
+    if (tE < 0) {
+        tE = 0;
+    }
+    if (tH > 1) {
+        tH = 1;
+    }
+    if (tH < 0) {
+        tH = 0;
+    }
+    if (tF > 1) {
+        tF = 1;
+    }
+    if (tF < 0) {
+        tF = 0;
+    }
+    if (tG > 1) {
+        tG = 1;
+    }
+    if (tG < 0) {
+        tG = 0;
+    }
+    
+    
+    
+    if (tStart > tEnd) {//当tStart > tEnd时出现bug，所以不能取（tStart，tEnd）
         printf("debug");
-    }
-    float min1;           //当tStart > tEnd时出现bug，所以不能取（tStart，tEnd）
-    float min2;
-    float max1;
-    float max2;
-    if (tE > tH) {
-        min1 = tH;
-        min2 = tE;
+        //不考虑这个区间
+        float min1;
+        float min2;
+        float max1;
+        float max2;
+
+
+
+        if (tE > tH) {
+            min1 = tH;
+            min2 = tE;
+        }
+        else {
+            min1 = tE;
+            min2 = tH;
+        }
+        if (tF > tG) {
+            max1 = tG;
+            max2 = tF;
+        }
+        else {
+            max1 = tF;
+            max2 = tG;
+        }
+
+        if (min2 <= max1) {  //4
+            return std::pair<float, float>(min2, max1);
+        }
+        if (min2 <= max2) {  //3
+            return std::pair<float, float>(min2, max2);
+        }
+        if (min1 <= max1) {  //3
+            return std::pair<float, float>(min1, max1);
+        }
+        if (min1 <= max2) {  //2
+            return std::pair<float, float>(min1, max2);
+        }
+        if (min2 < 1) {     //2
+            return std::pair<float, float>(min2, 1);
+        }
+        if (max1 > 0) {     //2
+            return std::pair<float, float>(0, max1);
+        }
+        if (min1 < 1) {
+            return std::pair<float, float>(min1, 1);
+        }
+        if (max2 > 0) {
+            return std::pair<float, float>(0, max2);
+        }
+        return std::pair<float, float>(0, 1);
+
+
     }
     else {
-        min1 = tE;
-        min2 = tH;
-    }
-    if (tF > tG) {
-        max1 = tG;
-        max2 = tF;
-    }
-    else {
-        max1 = tF;
-        max2 = tG;
-    }
-    if (min2 <= tStart) {
-        if (max1 >= tEnd) {
-            return std::pair<float, float>(tStart, tEnd);   //四个满足
+        if (tStart > 1) {
+            tStart = 1;
         }
-        if (max1 >= tStart) {
-            return std::pair<float, float>(tStart, max1);   //四个满足
+        if (tEnd < 0) {
+            tEnd = 0;
         }
-        if (max2 >= tEnd) {
-            return std::pair<float, float>(tStart, tEnd);   //三个满足
+        float min1;           
+        float min2;
+        float max1;
+        float max2;
+        
+
+
+        if (tE > tH) {
+            min1 = tH;
+            min2 = tE;
         }
-        if (max2 >= tStart) {
-            return std::pair<float, float>(tStart, max2);   //三个满足
+        else {
+            min1 = tE;
+            min2 = tH;
         }
-        return std::pair<float, float>(tStart, tEnd);       //两个满足
-    }
-    if (min1 <= tStart) {
-        if (min2 <= tEnd) {
+        if (tF > tG) {
+            max1 = tG;
+            max2 = tF;
+        }
+        else {
+            max1 = tF;
+            max2 = tG;
+        }
+        if (min2 <= tStart) {
             if (max1 >= tEnd) {
-                return std::pair<float, float>(min2, tEnd);   //四个满足
+                return std::pair<float, float>(tStart, tEnd);   //四个满足
             }
-            if (max1 >= min2) {
-                return std::pair<float, float>(min2, max1);   //四个满足
+            if (max1 >= tStart) {
+                return std::pair<float, float>(tStart, max1);   //四个满足
+            }
+            if (max2 >= tEnd) {
+                return std::pair<float, float>(tStart, tEnd);   //三个满足
+            }
+            if (max2 >= tStart) {
+                return std::pair<float, float>(tStart, max2);   //三个满足
+            }
+            return std::pair<float, float>(tStart, tEnd);       //两个满足
+        }
+        if (min1 <= tStart) {
+            if (min2 <= tEnd) {
+                if (max1 >= tEnd) {
+                    return std::pair<float, float>(min2, tEnd);   //四个满足
+                }
+                if (max1 >= min2) {
+                    return std::pair<float, float>(min2, max1);   //四个满足
+                }
+                if (max1 >= tStart) {
+                    return std::pair<float, float>(tStart, max1);   //三个满足
+                }
+                if (max2 >= tEnd) {
+                    return std::pair<float, float>(min2, tEnd);     //三个满足
+                }
+                if (max2 >= min2) {
+                    return std::pair<float, float>(min2, max2);   //三个满足
+                }
+                return std::pair<float, float>(min2, tEnd);   //两个满足
+            }
+            if (max1 >= tEnd) {
+                return std::pair<float, float>(tStart, tEnd);   //三个满足
             }
             if (max1 >= tStart) {
                 return std::pair<float, float>(tStart, max1);   //三个满足
             }
             if (max2 >= tEnd) {
-                return std::pair<float, float>(min2, tEnd);     //三个满足
+                return std::pair<float, float>(tStart, tEnd);   //两个满足
             }
-            if (max2 >= min2) {
-                return std::pair<float, float>(min2, max2);   //三个满足
+            if (max2 >= tStart) {
+                return std::pair<float, float>(tStart, max2);   //两个满足
             }
-            return std::pair<float, float>(min2, tEnd);   //两个满足
+            return std::pair<float, float>(tStart, tEnd);       //一个满足
         }
         if (max1 >= tEnd) {
-            return std::pair<float, float>(tStart, tEnd);   //三个满足
-        }
-        if (max1 >= tStart) {
-            return std::pair<float, float>(tStart, max1);   //三个满足
+            if (min2 <= tEnd) {
+                return std::pair<float, float>(min2, tEnd);     //四个都满足
+            }
+            if (min1 <= tEnd) {
+                return std::pair<float, float>(min1, tEnd);     //三个满足
+            }
+            return std::pair<float, float>(tStart, tEnd);     //两个满足
         }
         if (max2 >= tEnd) {
-            return std::pair<float, float>(tStart, tEnd);   //两个满足
+            if (max1 >= min2) {
+                return std::pair<float, float>(min2, max1);     //四个都满足
+            }
+            if (min1 <= max1) {
+                return std::pair<float, float>(min1, max1);     //三个满足
+            }
+            if (min2 <= tEnd) {
+                return std::pair<float, float>(min2, tEnd);     //三个满足
+            }
+            if (max1 >= tStart)
+                return std::pair<float, float>(tStart, max1);     //两个满足
+            if (min1 <= tEnd) {
+                return std::pair<float, float>(min1, tEnd);     //两个满足
+            }
+            return std::pair<float, float>(tStart, tEnd);     //一个满足
         }
-        if (max2 >= tStart) {
-            return std::pair<float, float>(tStart, max2);   //两个满足
-        }
-        return std::pair<float, float>(tStart, tEnd);       //一个满足
-    }
-    if (max1 >= tEnd) {
-        if (min2 <= tEnd) {
-            return std::pair<float, float>(min2, tEnd);     //四个都满足
-        }
-        if (min1 <= tEnd) {
-            return std::pair<float, float>(min1, tEnd);     //三个满足
-        }
-        return std::pair<float, float>(tStart, tEnd);     //两个满足
-    }
-    if (max2 >= tEnd) {
-        if (max1 >= min2) {
+        if (min2 <= max1) {
             return std::pair<float, float>(min2, max1);     //四个都满足
         }
         if (min1 <= max1) {
             return std::pair<float, float>(min1, max1);     //三个满足
         }
+        if (min2 <= max2) {
+            return std::pair<float, float>(min2, max2);     //三个满足
+        }
+        if (min1 <= max2) {
+            return std::pair<float, float>(min1, max2);     //两个满足
+        }
         if (min2 <= tEnd) {
-            return std::pair<float, float>(min2, tEnd);     //三个满足
+            return std::pair<float, float>(min2, tEnd);     //两个满足
         }
-        if (max1 >= tStart)
+        if (max1 >= tStart) {
             return std::pair<float, float>(tStart, max1);     //两个满足
-        if (min1 <= tEnd) {
-            return std::pair<float, float>(min1, tEnd);     //两个满足
         }
-        return std::pair<float, float>(tStart, tEnd);     //一个满足
+        if (min1 <= tEnd) {
+            return std::pair<float, float>(min1, tEnd);   //一个满足
+        }
+        if (max2 >= tStart) {
+            return std::pair<float, float>(tStart, max2);   //一个满足
+        }
+        return std::pair<float, float>(tStart, tEnd);   //0个满足
     }
-    if (min2 <= max1) {
-        return std::pair<float, float>(min2, max1);     //四个都满足
-    }
-    if (min1 <= max1) {
-        return std::pair<float, float>(min1, max1);     //三个满足
-    }
-    if (min2 <= max2) {
-        return std::pair<float, float>(min2, max2);     //三个满足
-    }
-    if (min1 <= max2) {
-        return std::pair<float, float>(min1, max2);     //两个满足
-    }
-    if (min2 <= tEnd) {
-        return std::pair<float, float>(min2, tEnd);     //两个满足
-    }
-    if (max1 >= tStart) {
-        return std::pair<float, float>(tStart, max1);     //两个满足
-    }
-    if (min1 <= tEnd) {
-        return std::pair<float, float>(min1, tEnd);   //一个满足
-    }
-    if (max2 >= tStart) {
-        return std::pair<float, float>(tStart, max2);   //一个满足
-    }
-    return std::pair<float, float>(tStart, tEnd);   //0个满足
+    
+    
     /*
     float min1;         //min1 < min2 < min3
     float min2;
@@ -312,7 +404,88 @@ std::pair<float, float> getSplitRegion(float tStart, float tEnd, float tE, float
     */
 }
 
+//tStart右侧，tEnd左侧，tD右侧，tE左侧
 std::pair<float, float> getSplitRegionOfBoundaryEdge(float tStart, float tEnd, float tD, float tE) {
+    if (tD > 1) {
+        tD = 1;
+    }
+    if (tD < 0) {
+        tD = 0;
+    }
+
+    if (tE > 1) {
+        tE = 1;
+    }
+    if (tE < 0) {
+        tE = 0;
+    }
+    
+    if (tStart > tEnd) {
+        printf("debug");
+        if (tD <= tE) {
+            return std::pair<float, float>(tD, tE);
+        }
+        if (tD < 1) {
+            return std::pair<float, float>(tD, 1);
+        }
+        if (tE > 0) {
+            return std::pair<float, float>(0, tE);
+        }
+        return std::pair<float, float>(0, 1);
+    }
+    
+
+    /*
+    float min1;           //当tStart > tEnd时出现bug，所以不能取（tStart，tEnd）
+    float min2;
+    float max1;
+    float max2;
+    
+    if (tStart > tD) {
+        min1 = tD;
+        min2 = tStart;
+    }
+    else {
+        min1 = tStart;
+        min2 = tD;
+    }
+    if (tEnd > tE) {
+        max1 = tE;
+        max2 = tEnd;
+    }
+    else {
+        max1 = tEnd;
+        max2 = tE;
+    }
+    if (min2 <= max1) {
+        return std::pair<float, float>(min2, max1); //4
+    }
+    else {                      //min2 > max1
+        if (min1 <= max1) {
+            return std::pair<float, float>(min1, max1); //3,不包含min1
+        }
+        if (min2 <= max2) {     //min1 > max1
+            return std::pair<float, float>(min2, max2); //3,不包含max1
+        }
+        if (min1 <= max2) {
+            return std::pair<float, float>(min1, max2); //2,不包含max1, min2
+        }
+        if (max1 >= 0) {
+            return std::pair<float, float>(0, max1);    //2,不包含min1, min2
+        }
+        if (min2 <= 1) {
+            return std::pair<float, float>(min2, 1);    //2,不包含max1, max2
+        }
+        if (max2 >= 0) {
+            return std::pair<float, float>(0, max2);    //1,不包含min1, min2, max1
+        }
+        if (min1 <= 1) {
+            return std::pair<float, float>(min1, 1);    //1,不包含max1, max2, min2
+        }
+        return std::pair<float, float>(0, 1);
+    }*/
+
+ 
     if (tD <= tStart) {
         if (tE >= tEnd) {
             return std::pair<float, float>(tStart, tEnd);
@@ -340,6 +513,8 @@ std::pair<float, float> getSplitRegionOfBoundaryEdge(float tStart, float tEnd, f
         }
         return std::pair<float, float>(tStart, tEnd);
     }
+
+    
 }
 
 Vertex* getThirdVertexInFace(Face* face, int v1, int v2) {
@@ -414,6 +589,8 @@ glm::vec3 rotatePoint(glm::vec3& normalFixed, glm::vec3& normalRotated, glm::vec
 }
 
 void setMeshFaceOfNewEdge(Face* meshFace, Face* newFace) {  //对新创建的面的新的边，添加其所在的meshface
+    newFace->parent = meshFace;
+    
     for (auto it = newFace->edges.begin(); it != newFace->edges.end(); it++) {
         bool exist = false;
         for (auto faceIt = (*it)->meshFaceId.begin(); faceIt != (*it)->meshFaceId.end(); faceIt++) {
@@ -513,6 +690,7 @@ void Mesh::CreateOBJFace(const std::string& line)
     face->setVertex(vs);
     face->children.push_back(face);
     face->isMesh = true;
+    face->parent = face;
     generateEdgeOfFace(face, true);
     face->calNormalOfFace();
 
@@ -686,8 +864,9 @@ bool Mesh::readOBJ(const char* fileName)
                         vertex = new Vertex();
                         vertex->init(position);
                         vertex->setId(vertexNum);
-                        vertexNum++;
+                        //vertex->setId(vertexes.size());
                         m_hash_point[position] = vertexes.size();
+                        vertexNum++;
                         
                     }
                     else {
@@ -714,6 +893,10 @@ bool Mesh::readOBJ(const char* fileName)
             else {
                 it = vertexes.erase(it);
             }
+        }
+        m_hash_point.clear();
+        for (auto it = vertexes.begin(); it != vertexes.end(); it++) {
+            m_hash_point[(*it)->position] = (*it)->vertexId;
         }
     }
     else {
@@ -787,7 +970,8 @@ begin_read:
             face->setId(faceId);
             face->setVertex(vs);
             generateEdgeOfFace(face, true);
-
+            
+            face->parent = face;
             face->children.push_back(face);
             faces.push_back(face);
             faceId++;
@@ -856,6 +1040,7 @@ bool Mesh::readSTLBinary(const char* fileName) {
         face->children.push_back(face);
         generateEdgeOfFace(face, true);
 
+        face->parent = face;
         faces.push_back(face);
         faceId++;
     }
@@ -1133,25 +1318,38 @@ void Mesh::generateEdgeOfFace(Face* face, bool meshEdge) {  //在建立面的时
 
     //求角度
 //    start = clock();
-//    float cosTheta0 = glm::dot((face->vertexs[1]->position - face->vertexs[0]->position), (face->vertexs[2]->position - face->vertexs[0]->position)) / length01 / length02;
-    double cosTheta0 = (length01 * length01 + length02 * length02 - length12 * length12) / 2 / length01 / length02;
+    double cosTheta0 = glm::dot((face->vertexs[1]->position - face->vertexs[0]->position), (face->vertexs[2]->position - face->vertexs[0]->position)) / length01 / length02;
+    //double cosTheta0 = (length01 * length01 + length02 * length02 - length12 * length12) / 2 / length01 / length02;
     double sinTheta0 = sqrt(1 - cosTheta0 * cosTheta0);
-    if (sinTheta0 < sinThetaMin) {
+    if (sinTheta0 < sinThetaMin && sinTheta0 != 0) {
         sinThetaMin = sinTheta0;
     }
+    if (sinTheta0 == 0) {
+        printf("debug");
+    }
+    //cosTheta0 = glm::dot((face->vertexs[1]->position - face->vertexs[0]->position), (face->vertexs[2]->position - face->vertexs[0]->position)) / length01 / length02;
+
     face->angles.push_back(cosTheta0);
-    double cosTheta1 = (length01 * length01 + length12 * length12 - length02 * length02) / 2 / length01 / length12;
-    //    float cosTheta1 = glm::dot((face->vertexs[0]->position - face->vertexs[1]->position), (face->vertexs[2]->position - face->vertexs[1]->position)) / length01 / length12;
+    //double cosTheta1 = (length01 * length01 + length12 * length12 - length02 * length02) / 2 / length01 / length12;
+    double cosTheta1 = glm::dot((face->vertexs[0]->position - face->vertexs[1]->position), (face->vertexs[2]->position - face->vertexs[1]->position)) / length01 / length12;
     double sinTheta1 = sqrt(1 - cosTheta1 * cosTheta1);
-    if (sinTheta1 < sinThetaMin) {
+    if (sinTheta1 < sinThetaMin && sinTheta1 != 0) {
         sinThetaMin = sinTheta1;
     }
+    if (sinTheta1 == 0) {
+        printf("debug");
+    }
+
     face->angles.push_back(cosTheta1);
-    double cosTheta2 = (length12 * length12 + length02 * length02 - length01 * length01) / 2 / length12 / length02;
-    //    float cosTheta2 = glm::dot((face->vertexs[0]->position - face->vertexs[2]->position), (face->vertexs[1]->position - face->vertexs[2]->position)) / length12 / length02;
+    //double cosTheta2 = (length12 * length12 + length02 * length02 - length01 * length01) / 2 / length12 / length02;
+    double cosTheta2 = glm::dot((face->vertexs[0]->position - face->vertexs[2]->position), (face->vertexs[1]->position - face->vertexs[2]->position)) / length12 / length02;
     double sinTheta2 = sqrt(1 - cosTheta2 * cosTheta2);
-    if (sinTheta2 < sinThetaMin) {
+    if (sinTheta2 < sinThetaMin && sinTheta2 != 0) {
         sinThetaMin = sinTheta2;
+    }
+
+    if (sinTheta2 == 0) {
+        printf("debug");
     }
 
     face->angles.push_back(cosTheta2);
@@ -1166,6 +1364,9 @@ void Mesh::generateEdgeOfFace(Face* face, bool meshEdge) {  //在建立面的时
 }
 
 void Mesh::computeParameter() {
+    //if (sinThetaMin < 0.0001) {
+    //    sinThetaMin = 0.0001;
+    //}
     float v1 = lMin * sinThetaMin / (0.5 + sinThetaMin);
     float v2 = lMin / 2;
 
@@ -1175,6 +1376,10 @@ void Mesh::computeParameter() {
     else {
         rhoV = v2;
     }
+    //if (rhoV < 0.0001) {
+    //    rhoV = 0.0001;
+    //}
+
     rhoE = 2 * rhoV * sinThetaMin;
 }
 
@@ -1360,6 +1565,7 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
         else {
             tE = 0;
         }
+        
 
         float tF = 1;
         if (edgeBC != NULL) {
@@ -1479,6 +1685,9 @@ void Mesh::handleNonFlippableNLDEdge(Edge* edge) {//edge就是edgeAB
 
 
         std::pair<float, float> tRegion = getSplitRegion(tStart, tEnd, tE, tH, tF, tG);//相对于AB而言
+        if (tRegion.first < 0 || tRegion.second > 1) {
+            printf("debug");
+        }
         glm::vec3 p1 = glm::vec3(vertexA->position.x + tRegion.first * (vertexB->position.x - vertexA->position.x), vertexA->position.y + tRegion.first * (vertexB->position.y - vertexA->position.y), vertexA->position.z + tRegion.first * (vertexB->position.z - vertexA->position.z));
         glm::vec3 p2 = glm::vec3(vertexA->position.x + tRegion.second * (vertexB->position.x - vertexA->position.x), vertexA->position.y + tRegion.second * (vertexB->position.y - vertexA->position.y), vertexA->position.z + tRegion.second * (vertexB->position.z - vertexA->position.z));
 
@@ -1971,16 +2180,45 @@ void Mesh::flipEdge(Edge* edgeAB) {       //翻转边，删除原三角面ABC、
     Face* parentFaceOfABD = getParentFace(parentEdge, faceABD);
 
     if (parentFaceOfABC->faceId == parentFaceOfABD->faceId) {   //同一个面片分割出来的两个子面片，则设置parentFace,parentFace也删除原面片，添加新的面作为子面片
-        bool antiClockWish = judgeAntiClockWish(faceABC, vertexA, vertexC);
         Face* faceACD = nullptr;
         Face* faceBCD = nullptr;
+        bool findFaceACD = false;
+        bool findFaceBCD = false;
+        if (edgeAD != nullptr) {
+            for (auto it = edgeAD->faceId.begin(); it != edgeAD->faceId.end(); it++) {
+                if (VertexBelongToFace(vertexC, faces[*it])) {
+                    faceACD = faces[*it];
+                    findFaceACD = true;
+                    break;
+                }
+            }
+        }
+        if (edgeBD != nullptr) {
+            for (auto it = edgeBD->faceId.begin(); it != edgeBD->faceId.end(); it++) {
+                if (VertexBelongToFace(vertexC, faces[*it])) {
+                    faceBCD = faces[*it];
+                    findFaceBCD = true;
+                    break;
+                }
+            }
+        }
+        bool antiClockWish = judgeAntiClockWish(faceABC, vertexA, vertexC);
+        
         if (antiClockWish) {
-            faceACD = generateNewFaceFromOldFace(faceABC, vertexA, vertexC, vertexD);
-            faceBCD = generateNewFaceFromOldFace(faceABC, vertexC, vertexB, vertexD);
+            if (!findFaceACD) {
+                faceACD = generateNewFaceFromOldFace(faceABC, vertexA, vertexC, vertexD);
+            }
+            if (!findFaceBCD) {
+                faceBCD = generateNewFaceFromOldFace(faceABC, vertexC, vertexB, vertexD);
+            }
         }
         else {
-            faceACD = generateNewFaceFromOldFace(faceABC, vertexC, vertexA, vertexD);
-            faceBCD = generateNewFaceFromOldFace(faceABC, vertexB, vertexC, vertexD);
+            if (!findFaceACD) {
+                faceACD = generateNewFaceFromOldFace(faceABC, vertexC, vertexA, vertexD);
+            }
+            if (!findFaceBCD) {
+                faceBCD = generateNewFaceFromOldFace(faceABC, vertexB, vertexC, vertexD);
+            }
         }
         
         parentFaceOfABC->deleteChild(faceABC);
@@ -2012,14 +2250,15 @@ void Mesh::flipEdge(Edge* edgeAB) {       //翻转边，删除原三角面ABC、
         edgeAB->faceId.clear();
         std::pair<int, int> edgePair(edgeAB->vertexe1->vertexId, edgeAB->vertexe2->vertexId);
         m_hash_edge.erase(edgePair);
-        for (auto it = edges.begin(); it != edges.end(); it++) {
-            if ((*it)->edgeId == edgeAB->edgeId) {
-                (*it)->deleted = true;
-                delete(*it);
-                edges.erase(it);
-                break;
-            }
-        }
+        edgeAB->deleted = true;
+        //for (auto it = edges.begin(); it != edges.end(); it++) {
+        //    if ((*it)->edgeId == edgeAB->edgeId) {
+        //        (*it)->deleted = true;
+        //        delete(*it);
+        //        edges.erase(it);
+        //        break;
+        //    }
+        //}
 
         faceABC->deleted = true;
         faceABC->vertexs.clear();
@@ -2115,6 +2354,8 @@ void Mesh::flipEdge(Edge* edgeAB) {       //翻转边，删除原三角面ABC、
 }
 
 Face* Mesh::getParentFace(Edge* edge, Face* childFace) {    //根据边edge来找meshFace
+    return childFace->parent;
+    
     if (edge->meshFaceId.size() == 0) {
         printf("emptyMeshFace\n");
         return nullptr;
@@ -2177,6 +2418,7 @@ Face* Mesh::generateNewFace(Vertex* v1, Vertex* v2, Vertex* v3) {//v1,v2,v3是�
     face->isMesh = true;
     faces.push_back(face);
     face->children.push_back(face);
+    face->parent = face;
 
     generateEdgeOfFace(face, true);
     face->calNormalOfFace();
@@ -2208,6 +2450,8 @@ Face* Mesh::generateNewFaceFromOldFace(Face* parentFace, Vertex* v1, Vertex* v2,
     faces.push_back(face);
     face->children.push_back(face);
 
+    
+
     generateEdgeOfFace(face, false);
 
     return face;
@@ -2227,6 +2471,10 @@ void Mesh::addNewNonFlippableNLDEdge(Face* face) {
 glm::vec3 Mesh::getAnotherVertexPositionByEdge(Face* face, Edge* edge) {
     Vertex* vertexA = edge->vertexe1;
     Vertex* vertexC = edge->vertexe2;
+    if (edge->faceId.size() != 2) {
+        printf("debug");
+    }
+
 
     //求另一个三角面
     Face* faceACE = nullptr;
@@ -2247,7 +2495,9 @@ glm::vec3 Mesh::getAnotherVertexPositionByEdge(Face* face, Edge* edge) {
 float Mesh::getAnotherVertexDegreeByEdge(Face* face, Edge* edge) {
     Vertex* vertexA = edge->vertexe1;
     Vertex* vertexC = edge->vertexe2;
-
+    if (edge->faceId.size() != 2) {
+        printf("debug");
+    }
     //求另一个三角面
     Face* faceACE = nullptr;
     if (*(edge->faceId.begin()) != face->faceId) {
@@ -2354,9 +2604,9 @@ void Mesh::init() {
 
 
 bool Mesh::isTypeI(Vertex* vertex, std::vector<float>& subtendedAngles) {
-    if (vertex->vertexId == 439) {
+    /*if (vertex->vertexId == 439) {
         printf("dubug");
-    }
+    }*/
     if (vertex->deleted) {
         printf("deleted vertex\n");
         return false;
@@ -2689,9 +2939,9 @@ std::vector<Face*> Mesh::flipEdgeWhenTestingTypeII(Edge* edgeAB, Face* faceABC, 
 }
 
 bool Mesh::flipAllEdgesOfTypeII(std::vector<Face*>& faceSet, Vertex* vertex, std::list<int>& borderEdge) {
-    if (vertex->vertexId == 3340) {
-        printf("debug");    //翻转的边出现边界边情况
-    }
+    //if (vertex->vertexId == 3340) {
+    //    printf("debug");    //翻转的边出现边界边情况
+    //}
     //if (vertex->vertexId == 173) {
     //    printf("debug");    //一条边有四个邻面。在简化(175,2825) to 175后检测相邻边出现该问题，因为有一个面片是边界面片（faces[20605]）
     //}
@@ -3067,9 +3317,9 @@ bool Mesh::resortIncidentEdge(Vertex* vertex) {     //根据incidentEdges来确�
 
 //第二类点：在简化后不需要反转洞以外的边即可满足LD
 bool Mesh::isTypeII(Vertex* vertex, std::vector<float>& subtendedAngles) {
-    if (vertex->vertexId == 5 && vertex->incidentEdges.size() == 7) {
+    /*if (vertex->vertexId == 5 && vertex->incidentEdges.size() == 7) {
         printf("debug");
-    }
+    }*/
     int edgeCount = vertex->incidentEdges.size();
     int faceCount = vertex->incidentFaces.size();
     vertex->typeII = false;
@@ -3084,28 +3334,32 @@ bool Mesh::isTypeII(Vertex* vertex, std::vector<float>& subtendedAngles) {
     std::vector<int> eVertexIndex;
     eVertexIndex.clear();
     //incidentEdges和incidentVertexes经过Type-I的重新排布保证了相邻的组成一个面
-    for (int i = 0; i < edgeCount; i++) {//对第i条边检查,看是否无需翻转
+    for (int i = 0; i < edgeCount; i++) {//对第i条边检查,看是否无需翻转  incidentVertexes[i]与incidentVertexes[i+1]所组成的面是incidentFaces[i]
         //bool encounter = true;
         Vertex* v1 = vertex->incidentVertexes[i];
         int nextIndex = (i + 1) % edgeCount;
         Vertex* v2 = vertex->incidentVertexes[nextIndex];
         int remainingPiontsCount = edgeCount - 2;
-        int j = (nextIndex + 1) % edgeCount;
+        int j = (nextIndex + 1) % edgeCount;    //j是剩下要检查的点的下标
+        double sini = 0;
+        if (subtendedAngles[i] != -5) {
+            sini = sqrt(1 - subtendedAngles[i] * subtendedAngles[i]);
+
+        }
         while (remainingPiontsCount > 0) {  //每个对顶点都需要检查
             Vertex* v3 = vertex->incidentVertexes[j];
             float length13 = glm::distance(v1->position, v3->position);
             float length23 = glm::distance(v2->position, v3->position);
 
-            double cos = glm::dot((v2->position - v3->position), (v1->position - v3->position)) / length13 / length23;
+            double cos3 = glm::dot((v2->position - v3->position), (v1->position - v3->position)) / length13 / length23;
             if (subtendedAngles[i] == -5) {    //没有外对角，则判断内对角
-                if (cos < -0.000001) {    //不满足条件(角度大于90度）
+                if (cos3 < -0.000001) {    //不满足条件(角度大于90度）
                     return false;
                 }
             }
             else {//外对角存在
-                double sini = sqrt(1 - subtendedAngles[i] * subtendedAngles[i]);
-                double sin = sqrt(1 - cos * cos);
-                double sinSum = sini * cos + subtendedAngles[j] * sin;
+                double sin3 = sqrt(1 - cos3 * cos3);
+                double sinSum = sini * cos3 + subtendedAngles[i] * sin3;
                 if (sinSum < -0.000001) {   //不满足条件(角度和大于180度）
                     return false;
                 }
@@ -3175,15 +3429,15 @@ bool Mesh::isTypeII(Vertex* vertex, std::vector<float>& subtendedAngles) {
         }
         borderEdgeIdList.push_back(edge->edgeId);*/
         
-        if (vertex->vertexId == 3340) {
-            printf("debug");    //翻转的边出现边界边情况
-        }
-        if (vertex->vertexId == 439 && vertex->e->vertexe1->vertexId == 427) {
-            printf("debug");    //翻转的边出现边界边情况
-        }
-        if (vertex->vertexId == 439) {
-            printf("debug");    //翻转的边出现边界边情况
-        }
+        //if (vertex->vertexId == 3340) {
+        //    printf("debug");    //翻转的边出现边界边情况
+        //}
+        //if (vertex->vertexId == 439 && vertex->e->vertexe1->vertexId == 427) {
+        //    printf("debug");    //翻转的边出现边界边情况
+        //}
+        //if (vertex->vertexId == 439) {
+        //    printf("debug");    //翻转的边出现边界边情况
+        //}
 
         int testVertexId = vertex->vertexId;
         for (int i = 0; i < faceCount; i++) {
@@ -3491,8 +3745,9 @@ void Mesh::simplification(float scale) {
             Vertex* secondVertex;
             Edge* oldEdge;
             int newFaceCount = incidentCount - 2;
-            //while循环中生成新的面，在同时把incidentCount-2个点的相邻点集删去removeVertex
             std::list<Face*> newFaces;
+            //while循环中生成新的面，在同时把incidentCount-2个点的相邻点集删去removeVertex
+            
             while (newFaceCount > 0) {
                 //找到原来的面
                 oldEdge = removeVertex->incidentEdges[nextIndex];

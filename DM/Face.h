@@ -13,6 +13,7 @@ public:
     char buf[2] = {};
     int faceId = -1;
     std::list<Face*> children;      //Mesh的面只包含其他face，非Mesh的面只包含自己
+    Face* parent = nullptr;
     bool isMesh = true;
     std::list<Edge*> borders;       //Mesh的面的边界线（可能是原来的边拆成了几段）
     bool deleted = false;

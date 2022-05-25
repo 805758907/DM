@@ -15,7 +15,7 @@ public:
     glm::mat4 Q = glm::mat4(0.0f);
     float eph = 0x7f7fffff;
     int lambda = 0;
-    bool deleted = false;   //判断在生成DM时是否需要删除
+    bool deleted = false;                   //判断在生成DM时是否需要删除
     std::vector<Edge*> incidentEdges;       //储存与该点连接的边
     std::vector<Vertex*> incidentVertexes;  //储存与该点有边相连的点
     Edge* e = nullptr;                      //要简化的边
