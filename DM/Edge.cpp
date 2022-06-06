@@ -46,7 +46,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 		}
 	}
 	if (it != Ce.end()) {
-/*		if ((*it) < part2) {	//ÕÒµ½Î»ÓÚv1¡¢v2Ö®¼äµÄ×îºóÒ»¸öµã
+		if ((*it) < part2) {	//ÕÒµ½Î»ÓÚv1¡¢v2Ö®¼äµÄ×îºóÒ»¸öµã
 			while (it != Ce.end() && (*it) < part2) {
 				it++;
 			}
@@ -57,7 +57,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 			Ce.erase(it);
 			return p;
 		}
-		if ((*it) <= part2) {	//ÕÒµ½Î»ÓÚv1¡¢v2Ö®¼äµÄµÚÒ»¸öµã
+/*		if ((*it) <= part2) {	//ÕÒµ½Î»ÓÚv1¡¢v2Ö®¼äµÄµÚÒ»¸öµã
 			glm::vec3 p = glm::vec3(0, 0, 0);
 			glm::vec3 vector = glm::vec3(*it, *it, *it) * normal;
 			p = p + vertexe1->position + vector;
@@ -65,7 +65,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 			return p;
 		}*/
 	//ÕÒµ½Î»ÓÚv1¡¢v2Ö®¼äµÄÖÐ¼äµã
-
+/*
 		if ((*it) <= part2) {
 			while (it != Ce.end()&& (*it) < center) {
 				it++;
@@ -83,7 +83,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 			Ce.erase(it);
 			return p;
 		}
-/**/		//²»ÔÚv1¡¢v2ÖÐ¼ä£¬¾ÍÕÒÀëv1»òv2×î½üµÄµã
+*/		//²»ÔÚv1¡¢v2ÖÐ¼ä£¬¾ÍÕÒÀëv1»òv2×î½üµÄµã
 		double dis2 = *(it) - part2;
 		double dis1;
 		if (it != Ce.begin()) {

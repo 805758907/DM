@@ -3,6 +3,7 @@
 #include "Mesh.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <time.h>
 
 int main() {
     Mesh mesh;
@@ -11,22 +12,21 @@ int main() {
     //mesh.readOBJ("../file/testObj.obj");
     //mesh.readOBJ("../file/testDM.obj");
     //mesh.readOBJ("../file/bunny.obj");
-    //mesh.readOBJ("../file/bunnyDM.obj");
-    //mesh.readSTL("../file/up.stl");
-    //mesh.readSTL("../file/玻璃罩.STL");
-    //mesh.readOBJ("../file/bolizhaoObj.obj");
-    //mesh.readSTL("../file/斯特林发动机装配体STEP转.STL");
-    //mesh.readOBJ("../file/T1objSuccess.obj");
-    //mesh.readOBJ("../file/T1objSuccessWithNoBoundary.obj");
-    //mesh.readOBJ("../file/airforce1Obj.obj");
-    //mesh.readOBJ("../file/happy_vrip_res2.obj");
-    mesh.printData();
-    //mesh.readSTL("../file/紧定螺钉M3X5-N.STL");
-    
-    mesh.generateDM();
+    mesh.readOBJ("../file/bunnyDM.obj");
+    //mesh.readSTL("../file/teapot.stl");
+    //mesh.printData();
+    clock_t start, finish;
+    double  duration;
+    start = clock();
+    //mesh.generateDM();
     //printf("face count: %d\n", mesh.faces.size());
-    //mesh.simplification(0.1);
-    mesh.printData();
+
+    mesh.simplification(0.1);
+
+    finish = clock();
+    duration = (double)(finish - start) / CLOCKS_PER_SEC;
+    printf("%f seconds\n", duration);
+
     //mesh.saveSTLBinary("../file/woct.stl");
     //mesh.saveOBJ("../res/withoutCheckwithDeleteSuc.obj");
     mesh.saveOBJ("../res/res.obj");
