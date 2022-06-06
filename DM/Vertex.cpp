@@ -2,6 +2,7 @@
 
 Vertex::Vertex() {
     vertexId = -1;
+    e = nullptr;
 }
 
 Vertex::Vertex(float newX, float newY, float newZ) {
@@ -12,7 +13,9 @@ Vertex::Vertex(float newX, float newY, float newZ) {
 }
 
 void Vertex::init(glm::vec3& p){
-    position = p;
+    position[0] = p.x;
+    position[1] = p.y;
+    position[2] = p.z;
 }
 
 void Vertex::setId(int id) {

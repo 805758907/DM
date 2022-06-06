@@ -37,19 +37,40 @@ Face::~Face() {
 }
 
 void Face::deleteChild(Face* child){
+    bool faceDeleted = false;
     for (auto it = children.begin(); it != children.end(); it++) {
         if ((*it)->faceId == child->faceId) {
             children.erase(it);
+            faceDeleted = true;
             break;
         }
     }
+    if (!faceDeleted) {
+        printf("deleteChild error\n");
+    }
+
 }
 
 void Face::deleteBorder(Edge* edge){
+    bool borderDeleted = false;
     for (auto it = borders.begin(); it != borders.end(); it++) {
         if ((*it)->edgeId == edge->edgeId) {
             borders.erase(it);
+            borderDeleted = true;
             break;
         }
     }
+    if (!borderDeleted) {
+        printf("deleteBorder error\n");
+    }
+}
+
+glm::vec3 Face::getMassCenter()
+{
+    glm::vec3 centerOfV0V1 = vertexs[0]->position + vertexs[1]->position;
+    centerOfV0V1 = glm::vec3(centerOfV0V1.x/2, centerOfV0V1.y / 2, centerOfV0V1.z / 2);
+    glm::vec3 direction = vertexs[2]->position - centerOfV0V1;
+    glm::vec3 massCenter = centerOfV0V1 + glm::vec3(direction.x / 3, direction.y / 3, direction.z / 3);
+
+    return massCenter;
 }

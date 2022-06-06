@@ -31,7 +31,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 	double part1 = len1 / length;	//v1ºÍv2ÓëÆðµã¾àÀëÔÚ×Ü³¤¶ÈµÄÕ¼±È
 	double part2 = len2 / length;
 	if (part2 > 1 || part1 > 1) {
-		printf("Çø¼ä¶Ëµã³¬¹ýÏß¶Î¶Ëµã");
+		printf("Çø¼ä¶Ëµã³¬¹ýÏß¶Î¶Ëµã\n");
 	}
 
 
@@ -46,7 +46,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 		}
 	}
 	if (it != Ce.end()) {
-/*		if ((*it) < part2) {	//ÕÒµ½Î»ÓÚv1¡¢v2Ö®¼äµÄ×îºóÒ»¸öµã
+		if ((*it) < part2) {	//ÕÒµ½Î»ÓÚv1¡¢v2Ö®¼äµÄ×îºóÒ»¸öµã
 			while (it != Ce.end() && (*it) < part2) {
 				it++;
 			}
@@ -57,7 +57,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 			Ce.erase(it);
 			return p;
 		}
-		if ((*it) <= part2) {	//ÕÒµ½Î»ÓÚv1¡¢v2Ö®¼äµÄµÚÒ»¸öµã
+/*		if ((*it) <= part2) {	//ÕÒµ½Î»ÓÚv1¡¢v2Ö®¼äµÄµÚÒ»¸öµã
 			glm::vec3 p = glm::vec3(0, 0, 0);
 			glm::vec3 vector = glm::vec3(*it, *it, *it) * normal;
 			p = p + vertexe1->position + vector;
@@ -65,7 +65,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 			return p;
 		}*/
 	//ÕÒµ½Î»ÓÚv1¡¢v2Ö®¼äµÄÖÐ¼äµã
-
+/*
 		if ((*it) <= part2) {
 			while (it != Ce.end()&& (*it) < center) {
 				it++;
@@ -83,7 +83,7 @@ glm::vec3 Edge::getSplitePosition(glm::vec3& v1, glm::vec3& v2) {//v1£¬v2ÎªÇø¼äµ
 			Ce.erase(it);
 			return p;
 		}
-/**/		//²»ÔÚv1¡¢v2ÖÐ¼ä£¬¾ÍÕÒÀëv1»òv2×î½üµÄµã
+*/		//²»ÔÚv1¡¢v2ÖÐ¼ä£¬¾ÍÕÒÀëv1»òv2×î½üµÄµã
 		double dis2 = *(it) - part2;
 		double dis1;
 		if (it != Ce.begin()) {
@@ -116,6 +116,9 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 	double rhoEPart = rhoE / length;
 
 	double rightRhoVPart = 1 - rhoVPart;	//Ceµã¼¯×îÓÒ²àµÄµã
+	if (v1 == v2) {
+		printf("same position of splite region\n");
+	}
 	
 	
 	double len1 = glm::distance(v1, vertexe1->position);
@@ -123,7 +126,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 	double part1 = len1 / length;	//v1ºÍv2ÓëÆðµã¾àÀëÔÚ×Ü³¤¶ÈµÄÕ¼±È
 	double part2 = len2 / length;
 	if (part2 > 1 || part1 > 1) {
-		printf("Çø¼ä¶Ëµã³¬¹ýÏß¶Î¶Ëµã/n");
+		printf("Çø¼ä¶Ëµã³¬¹ýÏß¶Î¶Ëµã\n");
 		return glm::vec3();
 	}
 	double center = (part1 + part2) / 2;
@@ -132,21 +135,21 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 	double target = center;		//×îÖÕ·Ö¸îµãµÄ±ÈÀý
 
 	glm::vec3 position;
-	glm::vec3 rhoEPartVection = direction * glm::vec3(rhoEPart, rhoEPart, rhoEPart);
-	glm::vec3 rhoVPartVection = direction * glm::vec3(rhoVPart, rhoVPart, rhoVPart);
+	glm::vec3 rhoEPartVector = direction * glm::vec3(rhoEPart, rhoEPart, rhoEPart);
+	glm::vec3 rhoVPartVector = direction * glm::vec3(rhoVPart, rhoVPart, rhoVPart);
 
 	bool succeed = false;					//ÊÇ·ñÕÒµ½Õâ¸ö·Ö¸îµã
 
 	if (center <= rhoVPart) {	//ÖÐµãÔÚrhoVPart×ó²à£¬ÔòÑ¡È¡rhoVPartÒÔ¼°ÓÒ²àµÄ×î½ü¿ÉÓÃµã£¨¼ÈÊÇºòÑ¡µã£¬Ò²Ã»ÓÐ±»ÓÃ¹ý£©
 		target = rhoVPart;
-		position = vertexe1->position + rhoVPartVection;
+		position = vertexe1->position + rhoVPartVector;
 
 		while (target <= rightRhoVPart) {
 			//¿´¿´ÊÇ·ñÄÜÔÚµã¼¯ÖÐÕÒµ½Õâ¸öµã
 			auto it = points->find(position);
 			if (it != points->end()) {	//¸ÃµãÒÑ¾­´æÔÚ£¬¼´ÊÇ±»ÓÃ¹ýµÄ£¬ÔòÕÒÏÂÒ»¸öµã
 				target += rhoEPart;
-				position += rhoEPartVection;
+				position += rhoEPartVector;
 			}
 			else {						//²»´æÔÚ£¬Ôò°Ñ¸Ãµã×÷Îª·Ö¸îµã
 				succeed = true;
@@ -157,14 +160,14 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 	}
 	else if (center >= rightRhoVPart) {	//ÖÐµãÔÚrightRhoVPartÓÒ²à£¬ÔòÑ¡È¡rightRhoVPartÒÔ¼°×ó²àµÄ×î½ü¿ÉÓÃµã£¨¼ÈÊÇºòÑ¡µã£¬Ò²Ã»ÓÐ±»ÓÃ¹ý£©
 		target = rightRhoVPart;
-		position = vertexe2->position - rhoVPartVection;
+		position = vertexe2->position - rhoVPartVector;
 		
 		while (target >= rhoVPart) {
 			//¿´¿´ÊÇ·ñÄÜÔÚµã¼¯ÖÐÕÒµ½Õâ¸öµã
 			auto it = points->find(position);
 			if (it != points->end()) {	//¸ÃµãÒÑ¾­´æÔÚ£¬¼´ÊÇ±»ÓÃ¹ýµÄ£¬ÔòÕÒÇ°Ò»¸öµã
 				target -= rhoEPart;
-				position -= rhoEPartVection;
+				position -= rhoEPartVector;
 			}
 			else {						//²»´æÔÚ£¬Ôò°Ñ¸Ãµã×÷Îª·Ö¸îµã
 				succeed = true;
@@ -184,7 +187,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 			auto itLeft = points->find(positionLeft);
 			if (itLeft != points->end()) {	//¸ÃµãÒÑ¾­´æÔÚ£¬¼´ÊÇ±»ÓÃ¹ýµÄ£¬ÔòÕÒÇ°Ò»¸öµã
 				targetLeft -= rhoEPart;
-				positionLeft -= rhoEPartVection;
+				positionLeft -= rhoEPartVector;
 			}
 			else {						//²»´æÔÚ£¬Ôò°Ñ¸Ãµã×÷Îª·Ö¸îµã
 				succeedLeft = true;
@@ -196,7 +199,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 		glm::vec3 positionRight;
 		if (targetRight > rightRhoVPart) {
 			targetRight = rightRhoVPart;
-			positionRight = vertexe2->position - rhoVPartVection;
+			positionRight = vertexe2->position - rhoVPartVector;
 			auto itRight = points->find(positionRight);
 			if (itRight != points->end()) {	//¸ÃµãÒÑ¾­´æÔÚ£¬¼´ÊÇ±»ÓÃ¹ýµÄ£¬ÔòÓÒ²àÒÑÃ»ÓÐ¿ÉÓÃµã
 				;
@@ -212,7 +215,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 				auto itRight = points->find(positionRight);
 				if (itRight != points->end()) {	//¸ÃµãÒÑ¾­´æÔÚ£¬¼´ÊÇ±»ÓÃ¹ýµÄ£¬ÔòÕÒºóÒ»¸öµã
 					targetRight += rhoEPart;
-					positionRight += rhoEPartVection;
+					positionRight += rhoEPartVector;
 				}
 				else {						//²»´æÔÚ£¬Ôò°Ñ¸Ãµã×÷Îª·Ö¸îµã
 					succeedRight = true;
@@ -221,7 +224,7 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 			}
 			if (!succeedRight && targetRight > rightRhoVPart) {
 				targetRight = rightRhoVPart;
-				positionRight = vertexe2->position - rhoVPartVection;
+				positionRight = vertexe2->position - rhoVPartVector;
 				auto itRight2 = points->find(positionRight);
 				if (itRight2 != points->end()) {	//¸ÃµãÒÑ¾­´æÔÚ£¬¼´ÊÇ±»ÓÃ¹ýµÄ£¬ÔòÓÒ²àÒÑÃ»ÓÐ¿ÉÓÃµã
 					;
@@ -264,7 +267,9 @@ glm::vec3 Edge::getSplitePosition2(glm::vec3& v1, glm::vec3& v2, double rhoV, do
 	}
 	else {
 		printf("ÕÒ²»µ½¿ÉÓÃµÄ·Ö¸îµã\n");
-		return glm::vec3();
+		//ÏÈ·µ»ØÖÐµãÊÔÒ»ÊÔ£º
+
+		return vertexe1->position + direction * glm::vec3(center, center, center);
 	}
 
 }
